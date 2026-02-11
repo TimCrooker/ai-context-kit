@@ -16,6 +16,7 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm build
       - run: node ../../packages/cli/dist/index.js build
         working-directory: examples/listforge-like
       - run: node ../../packages/cli/dist/index.js verify --strict-codex-config
