@@ -1,0 +1,10 @@
+{
+  "name": "example-listforge-like",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "context:build": "node ../../packages/cli/dist/index.js build",
+    "context:verify": "node ../../packages/cli/dist/index.js verify --strict-codex-config"
+  }
+}

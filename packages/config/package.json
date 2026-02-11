@@ -1,0 +1,27 @@
+{
+  "name": "@timcrooker/ai-context-config",
+  "version": "0.1.0",
+  "description": "Shared configuration presets for ai-context-kit",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./tsconfig/base": "./tsconfig/base.json"
+  },
+  "files": [
+    "dist",
+    "tsconfig"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "clean": "rm -rf dist",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  }
+}

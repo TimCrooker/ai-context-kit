@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "declaration": true,
+    "declarationMap": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "sourceMap": true,
+    "lib": ["ES2022"],
+    "baseUrl": ".",
+    "paths": {
+      "@timcrooker/ai-context-core": ["packages/core/src/index.ts"],
+      "@timcrooker/ai-context-templates": ["packages/templates/src/index.ts"],
+      "@timcrooker/ai-context-config": ["packages/config/src/index.ts"]
+    }
+  }
+}

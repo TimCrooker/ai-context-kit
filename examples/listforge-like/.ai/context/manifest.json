@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "modulesDir": ".ai/context/modules",
+  "scopesFile": ".ai/context/scopes.json",
+  "claudeOutput": "CLAUDE.md",
+  "targets": {
+    "root": "AGENTS.md",
+    "api": "apps/api/AGENTS.md",
+    "web": "apps/web/AGENTS.md"
+  }
+}

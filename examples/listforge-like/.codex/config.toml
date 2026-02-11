@@ -1,0 +1,5 @@
+project_root_markers = [".git"]
+project_doc_max_bytes = 65536
+
+[features]
+child_agents_md = true

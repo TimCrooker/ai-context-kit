@@ -1,0 +1,2 @@
+export const AI_CONTEXT_DEFAULT_MAX_BYTES = 65536;
+export const AI_CONTEXT_CONFIG_VERSION = 1;

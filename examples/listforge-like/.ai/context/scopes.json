@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "claudeRulesDir": ".claude/rules",
+  "scopes": [
+    {
+      "id": "api",
+      "codexTarget": "api",
+      "codexIncludes": [
+        ".ai/rules/backend-core.md",
+        ".ai/rules/security-core.md"
+      ],
+      "claudeIncludes": [
+        ".ai/rules/backend-core.md",
+        ".ai/rules/security-core.md"
+      ],
+      "codexAgents": [
+        "apps/api/AGENTS.md"
+      ],
+      "claudeMemories": [
+        "apps/api/CLAUDE.md"
+      ]
+    },
+    {
+      "id": "web",
+      "codexTarget": "web",
+      "codexIncludes": [
+        ".ai/rules/frontend-core.md",
+        ".ai/rules/ui-core.md"
+      ],
+      "claudeIncludes": [
+        ".ai/rules/frontend-core.md",
+        ".ai/rules/ui-core.md"
+      ],
+      "codexAgents": [
+        "apps/web/AGENTS.md"
+      ],
+      "claudeMemories": [
+        "apps/web/CLAUDE.md"
+      ]
+    }
+  ]
+}

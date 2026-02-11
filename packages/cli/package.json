@@ -1,0 +1,27 @@
+{
+  "name": "@timcrooker/ai-context-cli",
+  "version": "0.1.0",
+  "description": "CLI for Codex + Claude context generation",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "ai-context": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@timcrooker/ai-context-core": "workspace:*",
+    "@timcrooker/ai-context-templates": "workspace:*",
+    "commander": "^12.1.0"
+  }
+}
