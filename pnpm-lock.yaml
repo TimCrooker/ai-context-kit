@@ -32,10 +32,10 @@ importers:
   packages/cli:
     dependencies:
       '@timothycrooker/ai-context-core':
-        specifier: workspace:*
+        specifier: ^0.2.1
         version: link:../core
       '@timothycrooker/ai-context-templates':
-        specifier: workspace:*
+        specifier: ^0.2.1
         version: link:../templates
       commander:
         specifier: ^12.1.0
@@ -52,7 +52,7 @@ importers:
   packages/templates:
     dependencies:
       '@timothycrooker/ai-context-core':
-        specifier: workspace:*
+        specifier: ^0.2.1
         version: link:../core
 
 packages:

@@ -1,6 +1,6 @@
 {
   "name": "@timothycrooker/ai-context-config",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Shared configuration presets for ai-context-kit",
   "license": "MIT",
   "type": "module",
