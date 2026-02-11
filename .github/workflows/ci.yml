@@ -31,6 +31,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest' && matrix.node == 20
       - run: node ../../packages/cli/dist/index.js build --check
         if: matrix.os == 'ubuntu-latest' && matrix.node == 20
+        working-directory: examples/listforge-like
       - run: node ../../packages/cli/dist/index.js verify --strict-codex-config
         if: matrix.os == 'ubuntu-latest' && matrix.node == 20
         working-directory: examples/listforge-like
