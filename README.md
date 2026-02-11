@@ -45,6 +45,11 @@ pnpm lint
 pnpm typecheck
 ```
 
+## Publishing
+
+This repo is configured for npm trusted publishing with GitHub Actions (`id-token: write` + provenance).  
+Set up the trusted publisher in npm for `TimCrooker/ai-context-kit` before running automated releases.
+
 ## Compatibility Model
 
 - Codex: nested `AGENTS.md` hierarchy from scope definitions.
