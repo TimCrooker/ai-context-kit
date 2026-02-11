@@ -37,3 +37,31 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
+      - name: Verify Published Packages
+        run: |
+          set -euo pipefail
+          declare -A expected=(
+            ["@timothycrooker/ai-context-core"]="$(jq -r .version packages/core/package.json)"
+            ["@timothycrooker/ai-context-config"]="$(jq -r .version packages/config/package.json)"
+            ["@timothycrooker/ai-context-templates"]="$(jq -r .version packages/templates/package.json)"
+            ["@timothycrooker/ai-context-cli"]="$(jq -r .version packages/cli/package.json)"
+          )
+
+          for pkg in "${!expected[@]}"; do
+            ok=false
+            for attempt in {1..12}; do
+              published="$(NPM_CONFIG_USERCONFIG=/dev/null npm view "${pkg}" version --registry=https://registry.npmjs.org 2>/dev/null || true)"
+              if [[ "${published}" == "${expected[$pkg]}" ]]; then
+                echo "Verified ${pkg}@${published}"
+                ok=true
+                break
+              fi
+              echo "Waiting for ${pkg}@${expected[$pkg]} (attempt ${attempt}/12)"
+              sleep 10
+            done
+
+            if [[ "${ok}" != "true" ]]; then
+              echo "Package ${pkg} did not resolve to ${expected[$pkg]} within retry window."
+              exit 1
+            fi
+          done
