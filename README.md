@@ -22,6 +22,13 @@ pnpm exec ai-context build
 pnpm exec ai-context verify
 ```
 
+## Contracts and Guarantees
+
+- Stable CLI behavior and exit codes: `docs/cli-contract.md`
+- Config schema and validation rules: `docs/configuration.md`
+- Runtime error code catalog: `docs/error-codes.md`
+- Support and versioning policy: `docs/support-policy.md`
+
 ## CLI
 
 ```bash
@@ -35,6 +42,14 @@ ai-context doctor
 ai-context lint-config
 ```
 
+## Production Hardening
+
+- Deterministic generation output with normalized newlines.
+- Structured `ContextError` codes for machine-readable diagnostics.
+- CI matrix on Linux/macOS/Windows and Node 20/22.
+- Release workflow with post-publish package visibility verification.
+- Coverage thresholds enforced in `@timothycrooker/ai-context-core`.
+
 ## Repo Development
 
 ```bash
@@ -44,6 +59,16 @@ pnpm test
 pnpm lint
 pnpm typecheck
 ```
+
+## Docs
+
+- `docs/configuration.md`
+- `docs/compatibility.md`
+- `docs/troubleshooting.md`
+- `docs/recipes.md`
+- `docs/cli-contract.md`
+- `docs/error-codes.md`
+- `docs/support-policy.md`
 
 ## Publishing
 

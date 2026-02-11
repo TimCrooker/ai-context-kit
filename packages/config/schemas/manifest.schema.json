@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ai-context manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "modulesDir", "scopesFile", "targets"],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "const": 1
+    },
+    "modulesDir": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scopesFile": {
+      "type": "string",
+      "minLength": 1
+    },
+    "claudeOutput": {
+      "type": "string",
+      "minLength": 1
+    },
+    "targets": {
+      "type": "object",
+      "minProperties": 1,
+      "required": ["root"],
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}

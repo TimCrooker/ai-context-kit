@@ -1,6 +1,6 @@
 {
   "name": "@timothycrooker/ai-context-core",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Core engine for generating Codex and Claude context files",
   "license": "MIT",
   "type": "module",
@@ -21,7 +21,7 @@
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --coverage"
   },
   "dependencies": {
     "yaml": "^2.7.0"

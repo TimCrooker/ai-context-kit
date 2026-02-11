@@ -3,19 +3,21 @@ import {
   buildAll,
   diffGenerated,
   doctor,
+  formatContextError,
   initProject,
   lintConfig,
   verifyAll
 } from "@timothycrooker/ai-context-core";
 import { getTemplate, listTemplates } from "@timothycrooker/ai-context-templates";
 import { Command } from "commander";
+import { resolveCliVersion } from "./version.js";
 
 const program = new Command();
 
 program
   .name("ai-context")
   .description("Generate and verify shared Codex + Claude context files")
-  .version("0.1.0");
+  .version(resolveCliVersion());
 
 program
   .command("init")
@@ -31,7 +33,7 @@ program
       }
       console.log(`Initialized template '${template.name}'`);
     } catch (error) {
-      console.error(error instanceof Error ? error.message : "Failed to initialize template");
+      console.error(formatContextError(error));
       process.exit(1);
     }
   });
@@ -79,7 +81,7 @@ program
         result.upToDate ? "Context outputs are up to date" : "Context outputs generated successfully"
       );
     } catch (error) {
-      console.error(error instanceof Error ? error.message : "Build failed");
+      console.error(formatContextError(error));
       process.exit(1);
     }
   });
@@ -128,7 +130,7 @@ program
       }
       process.exitCode = 1;
     } catch (error) {
-      console.error(error instanceof Error ? error.message : "Diff failed");
+      console.error(formatContextError(error));
       process.exit(1);
     }
   });
@@ -170,6 +172,6 @@ program
   });
 
 program.parseAsync(process.argv).catch((error) => {
-  console.error(error instanceof Error ? error.message : "Unexpected CLI failure");
+  console.error(formatContextError(error));
   process.exit(1);
 });

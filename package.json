@@ -23,6 +23,7 @@
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
+    "preflight:release": "node ./scripts/release-preflight.mjs",
     "ai-context": "node packages/cli/dist/index.js",
     "format": "prettier --check \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
     "format:write": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
@@ -33,6 +34,7 @@
   "devDependencies": {
     "@changesets/cli": "^2.29.6",
     "@types/node": "^22.13.1",
+    "@vitest/coverage-v8": "^2.1.8",
     "prettier": "^3.5.0",
     "tsup": "^8.3.6",
     "typescript": "^5.7.3",

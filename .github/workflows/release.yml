@@ -28,6 +28,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      - run: pnpm preflight:release
       - name: Create Release PR or Publish
         uses: changesets/action@v1
         with:

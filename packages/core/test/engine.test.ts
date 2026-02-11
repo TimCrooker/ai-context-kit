@@ -1,19 +1,8 @@
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildAll, lintConfig, verifyAll } from "../src/index.js";
-
-function fixturePath(): string {
-  return path.resolve(process.cwd(), "../../examples/listforge-like");
-}
-
-function copyFixture(): string {
-  const fixture = fixturePath();
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "ai-context-kit-"));
-  fs.cpSync(fixture, tempDir, { recursive: true });
-  return tempDir;
-}
+import { buildAll, diffGenerated, lintConfig, verifyAll } from "../src/index.js";
+import { copyFixture } from "./helpers.js";
 
 describe("context engine", () => {
   it("builds generated outputs for fixture", () => {
@@ -43,5 +32,28 @@ describe("context engine", () => {
 
     expect(lint.ok).toBe(true);
     expect(lint.errors).toEqual([]);
+  });
+
+  it("detects generated orphan markdown files in diff", () => {
+    const cwd = copyFixture();
+    buildAll(cwd);
+
+    const orphanPath = path.join(cwd, ".claude/rules/orphan.md");
+    const orphanBody = [
+      "<!--",
+      "  GENERATED FILE: Do not edit directly.",
+      "  Source: .ai/context/scopes.json",
+      "  Build: ai-context build",
+      "-->",
+      "",
+      "# stale"
+    ].join("\n");
+    fs.mkdirSync(path.dirname(orphanPath), { recursive: true });
+    fs.writeFileSync(orphanPath, orphanBody, "utf8");
+
+    const diff = diffGenerated(cwd);
+    expect(diff.items).toEqual(
+      expect.arrayContaining([{ path: ".claude/rules/orphan.md", type: "delete" }])
+    );
   });
 });

@@ -1,5 +1,15 @@
 # @timothycrooker/ai-context-templates
 
+## 0.2.2
+
+### Patch Changes
+
+- Production hardening release:
+  - fixed markdown template newline escaping
+  - added generated schema files for manifest and scopes
+  - added template integrity tests
+  - updated dependency: @timothycrooker/ai-context-core@0.2.2
+
 ## 0.2.0
 
 ### Minor Changes

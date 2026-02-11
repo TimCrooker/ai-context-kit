@@ -1,5 +1,17 @@
 # @timothycrooker/ai-context-cli
 
+## 0.2.2
+
+### Patch Changes
+
+- Production hardening release:
+  - CLI version now resolves dynamically from package metadata
+  - structured core error formatting surfaced in CLI output
+  - added CLI version contract tests
+  - updated dependencies:
+    - @timothycrooker/ai-context-core@0.2.2
+    - @timothycrooker/ai-context-templates@0.2.2
+
 ## 0.2.0
 
 ### Minor Changes

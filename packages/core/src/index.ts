@@ -18,7 +18,8 @@ export type {
   VerifyResult
 } from "./types.js";
 
-export { ContextError } from "./errors.js";
+export type { ContextErrorCode } from "./errors.js";
+export { ContextError, formatContextError, isContextError } from "./errors.js";
 export { loadManifest, loadModules, loadScopeManifest, resolveScopeIncludes } from "./config.js";
 export { buildAll, diffGenerated, doctor, initProject, lintConfig, verifyAll } from "./engine.js";
 export { computeDocChainBudget } from "./budget.js";

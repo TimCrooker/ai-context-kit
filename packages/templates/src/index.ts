@@ -12,9 +12,105 @@ const DEFAULT_TEMPLATE: Template = {
   name: "default",
   files: [
     {
+      path: ".ai/context/schemas/manifest.schema.json",
+      content: JSON.stringify(
+        {
+          $schema: "https://json-schema.org/draft/2020-12/schema",
+          title: "ai-context manifest",
+          type: "object",
+          additionalProperties: false,
+          required: ["version", "modulesDir", "scopesFile", "targets"],
+          properties: {
+            $schema: { type: "string" },
+            version: { const: 1 },
+            modulesDir: { type: "string", minLength: 1 },
+            scopesFile: { type: "string", minLength: 1 },
+            claudeOutput: { type: "string", minLength: 1 },
+            targets: {
+              type: "object",
+              minProperties: 1,
+              required: ["root"],
+              additionalProperties: {
+                type: "string",
+                minLength: 1
+              }
+            }
+          }
+        },
+        null,
+        2
+      )
+    },
+    {
+      path: ".ai/context/schemas/scopes.schema.json",
+      content: JSON.stringify(
+        {
+          $schema: "https://json-schema.org/draft/2020-12/schema",
+          title: "ai-context scopes",
+          type: "object",
+          additionalProperties: false,
+          required: ["version", "scopes"],
+          properties: {
+            $schema: { type: "string" },
+            version: { const: 1 },
+            claudeRulesDir: { type: "string", minLength: 1 },
+            scopes: {
+              type: "array",
+              minItems: 1,
+              items: {
+                type: "object",
+                additionalProperties: false,
+                required: ["id"],
+                properties: {
+                  id: { type: "string", minLength: 1 },
+                  codexTarget: { type: "string", minLength: 1 },
+                  includes: {
+                    type: "array",
+                    minItems: 1,
+                    items: { type: "string", minLength: 1 }
+                  },
+                  codexIncludes: {
+                    type: "array",
+                    minItems: 1,
+                    items: { type: "string", minLength: 1 }
+                  },
+                  claudeIncludes: {
+                    type: "array",
+                    minItems: 1,
+                    items: { type: "string", minLength: 1 }
+                  },
+                  codexAgents: {
+                    type: "array",
+                    minItems: 1,
+                    items: { type: "string", minLength: 1 }
+                  },
+                  claudeMemories: {
+                    type: "array",
+                    minItems: 1,
+                    items: { type: "string", minLength: 1 }
+                  },
+                  claudeRuleFile: { type: "string", minLength: 1 },
+                  claudePaths: {
+                    type: "array",
+                    minItems: 1,
+                    items: { type: "string", minLength: 1 }
+                  },
+                  parity: { type: "boolean" },
+                  reason: { type: "string", minLength: 1 }
+                }
+              }
+            }
+          }
+        },
+        null,
+        2
+      )
+    },
+    {
       path: ".ai/context/manifest.json",
       content: JSON.stringify(
         {
+          $schema: "./schemas/manifest.schema.json",
           version: 1,
           modulesDir: ".ai/context/modules",
           scopesFile: ".ai/context/scopes.json",
@@ -33,6 +129,7 @@ const DEFAULT_TEMPLATE: Template = {
       path: ".ai/context/scopes.json",
       content: JSON.stringify(
         {
+          $schema: "./schemas/scopes.schema.json",
           version: 1,
           claudeRulesDir: ".claude/rules",
           scopes: [
@@ -100,19 +197,31 @@ const DEFAULT_TEMPLATE: Template = {
     },
     {
       path: ".ai/rules/backend-core.md",
-      content: "# Backend Core Rules\\n\\nKeep controllers thin and services cohesive."
+      content: ["# Backend Core Rules", "", "Keep controllers thin and services cohesive."].join("\n")
     },
     {
       path: ".ai/rules/frontend-core.md",
-      content: "# Frontend Core Rules\\n\\nUse shared API clients, avoid ad-hoc fetch patterns."
+      content: [
+        "# Frontend Core Rules",
+        "",
+        "Use shared API clients, avoid ad-hoc fetch patterns."
+      ].join("\n")
     },
     {
       path: ".ai/rules/security-core.md",
-      content: "# Security Core Rules\\n\\nTreat tenant context as server-derived, never user-owned."
+      content: [
+        "# Security Core Rules",
+        "",
+        "Treat tenant context as server-derived, never user-owned."
+      ].join("\n")
     },
     {
       path: ".ai/rules/ui-core.md",
-      content: "# UI Core Rules\\n\\nPrefer shared UI primitives and content-first design constraints."
+      content: [
+        "# UI Core Rules",
+        "",
+        "Prefer shared UI primitives and content-first design constraints."
+      ].join("\n")
     },
     {
       path: ".codex/config.toml",

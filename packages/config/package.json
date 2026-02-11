@@ -1,6 +1,6 @@
 {
   "name": "@timothycrooker/ai-context-config",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Shared configuration presets for ai-context-kit",
   "license": "MIT",
   "type": "module",
@@ -11,11 +11,14 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./tsconfig/base": "./tsconfig/base.json"
+    "./tsconfig/base": "./tsconfig/base.json",
+    "./schemas/manifest": "./schemas/manifest.schema.json",
+    "./schemas/scopes": "./schemas/scopes.schema.json"
   },
   "files": [
     "dist",
-    "tsconfig"
+    "tsconfig",
+    "schemas"
   ],
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean",

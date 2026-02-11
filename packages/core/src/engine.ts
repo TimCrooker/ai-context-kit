@@ -11,7 +11,7 @@ import { computeDocChainBudget } from "./budget.js";
 import { collectGeneratedOutputs } from "./render.js";
 import { exists, readUtf8, removeFile, walkFiles, writeUtf8 } from "./io.js";
 import { rel, toPosix } from "./path-utils.js";
-import { ContextError } from "./errors.js";
+import { ContextError, formatContextError } from "./errors.js";
 import type {
   BuildOptions,
   BuildResult,
@@ -38,10 +38,7 @@ const SKIP_DIRS = new Set([
 
 function gatherGeneratedFiles(cwd: string): string[] {
   return walkFiles(cwd, SKIP_DIRS)
-    .filter((abs) => {
-      const base = path.basename(abs);
-      return base === "AGENTS.md" || base === "CLAUDE.md";
-    })
+    .filter((abs) => abs.endsWith(".md"))
     .filter((abs) => readUtf8(abs).includes(GENERATED_MARKER))
     .map((abs) => rel(cwd, abs));
 }
@@ -81,9 +78,6 @@ function writeOutputs(
     const expected = new Set(outputs.map((o) => o.path));
     const generatedFiles = gatherGeneratedFiles(cwd);
     for (const generated of generatedFiles) {
-      if (generated === "CLAUDE.md" || generated === "AGENTS.md") {
-        continue;
-      }
       if (!expected.has(generated)) {
         result.upToDate = false;
         if (!options.check && !options.dryRun) {
@@ -134,9 +128,6 @@ export function diffGenerated(cwd: string, options: BuildOptions = {}): DiffRepo
   const expected = new Set(outputs.map((o) => o.path));
   const generatedFiles = gatherGeneratedFiles(cwd);
   for (const generated of generatedFiles) {
-    if (generated === "AGENTS.md" || generated === "CLAUDE.md") {
-      continue;
-    }
     if (!expected.has(generated)) {
       items.push({ path: generated, type: "delete" });
     }
@@ -195,9 +186,7 @@ export function verifyAll(cwd: string, options: VerifyOptions = {}): VerifyResul
       }
     }
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unknown verify error while loading context";
-    errors.push(message);
+    errors.push(formatContextError(error));
   }
 
   return {
@@ -216,7 +205,7 @@ export function lintConfig(cwd: string, manifestPath?: string): { ok: boolean; e
     validateScopeWiring(cwd, manifest, scopes);
     loadModules(cwd, manifest);
   } catch (error) {
-    errors.push(error instanceof Error ? error.message : "Unknown lint-config error");
+    errors.push(formatContextError(error));
   }
   return { ok: errors.length === 0, errors };
 }
@@ -253,6 +242,7 @@ export function initProject(cwd: string, template: Template, options: InitOption
     const abs = path.join(cwd, file.path);
     if (fs.existsSync(abs) && !options.force) {
       throw new ContextError(
+        "AICTX_INIT_FAILED",
         `Refusing to overwrite existing file without --force: ${toPosix(path.relative(cwd, abs))}`
       );
     }
