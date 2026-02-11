@@ -24,5 +24,13 @@
   },
   "dependencies": {
     "@timothycrooker/ai-context-core": "workspace:*"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TimCrooker/ai-context-kit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TimCrooker/ai-context-kit/issues"
+  },
+  "homepage": "https://github.com/TimCrooker/ai-context-kit#readme"
 }

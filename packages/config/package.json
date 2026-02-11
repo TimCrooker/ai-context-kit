@@ -23,5 +23,13 @@
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TimCrooker/ai-context-kit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TimCrooker/ai-context-kit/issues"
+  },
+  "homepage": "https://github.com/TimCrooker/ai-context-kit#readme"
 }

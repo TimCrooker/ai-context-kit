@@ -25,5 +25,13 @@
   },
   "dependencies": {
     "yaml": "^2.7.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TimCrooker/ai-context-kit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TimCrooker/ai-context-kit/issues"
+  },
+  "homepage": "https://github.com/TimCrooker/ai-context-kit#readme"
 }
