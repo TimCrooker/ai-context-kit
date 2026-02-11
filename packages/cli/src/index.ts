@@ -6,8 +6,8 @@ import {
   initProject,
   lintConfig,
   verifyAll
-} from "@timcrooker/ai-context-core";
-import { getTemplate, listTemplates } from "@timcrooker/ai-context-templates";
+} from "@timothycrooker/ai-context-core";
+import { getTemplate, listTemplates } from "@timothycrooker/ai-context-templates";
 import { Command } from "commander";
 
 const program = new Command();

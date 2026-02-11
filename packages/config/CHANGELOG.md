@@ -1,4 +1,4 @@
-# @timcrooker/ai-context-config
+# @timothycrooker/ai-context-config
 
 ## 0.2.0
 

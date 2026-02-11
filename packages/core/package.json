@@ -1,5 +1,5 @@
 {
-  "name": "@timcrooker/ai-context-core",
+  "name": "@timothycrooker/ai-context-core",
   "version": "0.2.0",
   "description": "Core engine for generating Codex and Claude context files",
   "license": "MIT",

@@ -1,4 +1,4 @@
-# @timcrooker/ai-context-core
+# @timothycrooker/ai-context-core
 
 ## 0.2.0
 

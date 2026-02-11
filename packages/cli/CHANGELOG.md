@@ -1,4 +1,4 @@
-# @timcrooker/ai-context-cli
+# @timothycrooker/ai-context-cli
 
 ## 0.2.0
 
@@ -9,5 +9,5 @@
 ### Patch Changes
 
 - Updated dependencies [bec7a19]
-  - @timcrooker/ai-context-core@0.2.0
-  - @timcrooker/ai-context-templates@0.2.0
+  - @timothycrooker/ai-context-core@0.2.0
+  - @timothycrooker/ai-context-templates@0.2.0

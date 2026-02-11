@@ -18,9 +18,9 @@
     "lib": ["ES2022"],
     "baseUrl": ".",
     "paths": {
-      "@timcrooker/ai-context-core": ["packages/core/src/index.ts"],
-      "@timcrooker/ai-context-templates": ["packages/templates/src/index.ts"],
-      "@timcrooker/ai-context-config": ["packages/config/src/index.ts"]
+      "@timothycrooker/ai-context-core": ["packages/core/src/index.ts"],
+      "@timothycrooker/ai-context-templates": ["packages/templates/src/index.ts"],
+      "@timothycrooker/ai-context-config": ["packages/config/src/index.ts"]
     }
   }
 }

@@ -4,10 +4,10 @@ Reusable context generation for mixed Codex + Claude workflows.
 
 ## Packages
 
-- `@timcrooker/ai-context-core`: generation and verification engine
-- `@timcrooker/ai-context-cli`: CLI (`ai-context`) for init/build/verify/diff/doctor
-- `@timcrooker/ai-context-templates`: starter project templates
-- `@timcrooker/ai-context-config`: shared config constants/presets
+- `@timothycrooker/ai-context-core`: generation and verification engine
+- `@timothycrooker/ai-context-cli`: CLI (`ai-context`) for init/build/verify/diff/doctor
+- `@timothycrooker/ai-context-templates`: starter project templates
+- `@timothycrooker/ai-context-config`: shared config constants/presets
 
 ## Why
 
@@ -16,7 +16,7 @@ Most teams either duplicate context docs across tools or let one tool drift. Thi
 ## Quickstart
 
 ```bash
-pnpm add -D @timcrooker/ai-context-cli
+pnpm add -D @timothycrooker/ai-context-cli
 pnpm exec ai-context init
 pnpm exec ai-context build
 pnpm exec ai-context verify

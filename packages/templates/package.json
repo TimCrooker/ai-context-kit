@@ -1,5 +1,5 @@
 {
-  "name": "@timcrooker/ai-context-templates",
+  "name": "@timothycrooker/ai-context-templates",
   "version": "0.2.0",
   "description": "Project templates for ai-context-kit",
   "license": "MIT",
@@ -23,6 +23,6 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@timcrooker/ai-context-core": "workspace:*"
+    "@timothycrooker/ai-context-core": "workspace:*"
   }
 }
