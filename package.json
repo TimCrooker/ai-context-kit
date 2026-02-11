@@ -23,6 +23,7 @@
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
+    "ai-context": "node packages/cli/dist/index.js",
     "format": "prettier --check \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
     "format:write": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
     "changeset": "changeset",
