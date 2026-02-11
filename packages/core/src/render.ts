@@ -25,6 +25,10 @@ function withGeneratedHeader(source: string, body: string): string {
   return `${header}${body.trim()}\n`;
 }
 
+function tidySpacing(input: string): string {
+  return input.replace(/\n{3,}/g, "\n\n").trim();
+}
+
 function rewriteInlineDocRefs(body: string, includePath: string): string {
   const includeDir = path.posix.dirname(toPosix(includePath));
   const fenceRegex = /```[\s\S]*?```/g;
@@ -87,7 +91,7 @@ function buildScopedAgents(cwd: string, scope: ScopeDefinition): string {
     `## Scope: ${scope.id}`
   ];
 
-  const body = [...intro, ...includeBlocks(cwd, includes)].join("\n\n");
+  const body = tidySpacing([intro.join("\n"), ...includeBlocks(cwd, includes)].join("\n\n"));
   return withGeneratedHeader(".ai/context/scopes.json", body);
 }
 
@@ -124,7 +128,7 @@ function buildScopedClaude(cwd: string, scope: ScopeDefinition): string {
     `## Scope: ${scope.id}`
   ];
 
-  const body = [...intro, ...includeBlocks(cwd, includes)].join("\n\n");
+  const body = tidySpacing([intro.join("\n"), ...includeBlocks(cwd, includes)].join("\n\n"));
   return withGeneratedHeader(".ai/context/scopes.json", body);
 }
 

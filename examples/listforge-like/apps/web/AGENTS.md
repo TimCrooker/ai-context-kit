@@ -5,13 +5,9 @@
 -->
 # Scoped Agent Context (Generated)
 
-
-
 This file is generated from `.ai/context/scopes.json` by `ai-context build`.
 
 Edit scope definitions and re-run the build instead of editing this file directly.
-
-
 
 ## Scope: web
 
