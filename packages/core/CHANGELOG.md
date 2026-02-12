@@ -1,5 +1,11 @@
 # @timothycrooker/ai-context-core
 
+## 0.3.0
+
+### Minor Changes
+
+- d631332: Add content best practices: writing guide, standard/monorepo templates with auto-detection, and content quality linting in doctor.
+
 ## 0.2.2
 
 ### Patch Changes

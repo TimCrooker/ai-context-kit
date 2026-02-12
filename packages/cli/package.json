@@ -1,6 +1,6 @@
 {
   "name": "@timothycrooker/ai-context-cli",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "CLI for Codex + Claude context generation",
   "license": "MIT",
   "type": "module",
@@ -20,8 +20,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@timothycrooker/ai-context-core": "^0.2.2",
-    "@timothycrooker/ai-context-templates": "^0.2.2",
+    "@timothycrooker/ai-context-core": "^0.3.0",
+    "@timothycrooker/ai-context-templates": "^0.3.0",
     "commander": "^12.1.0"
   },
   "repository": {
