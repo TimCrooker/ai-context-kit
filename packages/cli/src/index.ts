@@ -8,7 +8,7 @@ import {
   lintConfig,
   verifyAll
 } from "@timothycrooker/ai-context-core";
-import { getTemplate, listTemplates } from "@timothycrooker/ai-context-templates";
+import { detectTemplate, getTemplate, listTemplates } from "@timothycrooker/ai-context-templates";
 import { Command } from "commander";
 import { resolveCliVersion } from "./version.js";
 
@@ -22,11 +22,12 @@ program
 program
   .command("init")
   .description("Initialize context scaffolding")
-  .option("--template <name>", "template name", "default")
+  .option("--template <name>", "template name (auto-detected if omitted)", "auto")
   .option("--force", "overwrite existing files", false)
   .action((opts: { template: string; force: boolean }) => {
     try {
-      const template = getTemplate(opts.template);
+      const templateName = opts.template === "auto" ? detectTemplate(process.cwd()) : opts.template;
+      const template = getTemplate(templateName);
       const written = initProject(process.cwd(), template, { force: Boolean(opts.force) });
       for (const file of written) {
         console.log(`created: ${file}`);

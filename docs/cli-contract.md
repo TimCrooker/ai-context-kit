@@ -13,8 +13,9 @@
 
 - Purpose: scaffold context files from template.
 - Flags:
-  - `--template <name>`: template name, default `default`
+  - `--template <name>`: template name, auto-detected if omitted (`standard` or `monorepo`)
   - `--force`: overwrite existing files
+- Auto-detection: when `--template` is omitted, detects `monorepo` if `turbo.json` exists or `turbo` is in `package.json` devDependencies; otherwise uses `standard`.
 - Success output: `created: <path>` lines + final template confirmation.
 
 ### `ai-context templates`
@@ -49,8 +50,15 @@
 
 ### `ai-context doctor`
 
-- Purpose: diagnose common setup/config issues.
-- Success behavior: `0` when no issues found.
+- Purpose: diagnose common setup/config issues and content quality.
+- Checks:
+  - Config validation and scope wiring (from `verify`)
+  - **Content quality** (advisory suggestions, not errors):
+    - Rule files missing `## Gotchas` or `## Verification` sections
+    - Rule files with thin content (< 5 substantive lines)
+    - Rule files containing placeholder markers (`TODO`, `FIXME`, `PLACEHOLDER`)
+    - Root-targeted modules exceeding 80 lines
+- Success behavior: `0` when no issues found. Content suggestions printed as `note:` lines.
 - Failure behavior: `1` with `issue:` lines.
 
 ### `ai-context lint-config`

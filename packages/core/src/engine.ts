@@ -9,6 +9,7 @@ import {
 } from "./config.js";
 import { computeDocChainBudget } from "./budget.js";
 import { collectGeneratedOutputs } from "./render.js";
+import { lintContent } from "./content-lint.js";
 import { exists, readUtf8, removeFile, walkFiles, writeUtf8 } from "./io.js";
 import { rel, toPosix } from "./path-utils.js";
 import { ContextError, formatContextError } from "./errors.js";
@@ -228,7 +229,18 @@ export function doctor(cwd: string, manifestPath?: string): { issues: string[]; 
     suggestions.push(...verify.warnings);
   }
 
-  if (issues.length === 0) {
+  // Content quality lint (best-effort — don't fail doctor on lint errors)
+  try {
+    const manifest = loadManifest(cwd, manifestPath);
+    const scopeManifest = loadScopeManifest(cwd, manifest);
+    const modules = loadModules(cwd, manifest);
+    const contentResult = lintContent(cwd, manifest, scopeManifest, modules);
+    suggestions.push(...contentResult.suggestions);
+  } catch {
+    // content lint is best-effort
+  }
+
+  if (issues.length === 0 && suggestions.length === 0) {
     suggestions.push("System looks healthy. Run ai-context diff before major scope changes.");
   }
 

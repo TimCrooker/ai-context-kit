@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildAll, diffGenerated, lintConfig, verifyAll } from "../src/index.js";
+import { buildAll, diffGenerated, doctor, lintConfig, verifyAll } from "../src/index.js";
 import { copyFixture } from "./helpers.js";
 
 describe("context engine", () => {
@@ -32,6 +32,16 @@ describe("context engine", () => {
 
     expect(lint.ok).toBe(true);
     expect(lint.errors).toEqual([]);
+  });
+
+  it("doctor reports content quality suggestions for skeletal rules", () => {
+    const cwd = copyFixture();
+    // Degrade a rule file to skeletal content
+    const rulePath = path.join(cwd, ".ai/rules/backend-core.md");
+    fs.writeFileSync(rulePath, "# Backend Rules\n\n- One rule.\n", "utf8");
+
+    const result = doctor(cwd);
+    expect(result.suggestions.some((s) => s.includes("thin content"))).toBe(true);
   });
 
   it("detects generated orphan markdown files in diff", () => {

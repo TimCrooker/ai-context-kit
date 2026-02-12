@@ -22,6 +22,23 @@ pnpm exec ai-context build
 pnpm exec ai-context verify
 ```
 
+## Content Guide
+
+Writing effective context files is the biggest lever for agent performance.
+See `docs/content-guide.md` for the full writing guide covering rule file anatomy, priority hierarchy, and common mistakes.
+
+## Templates
+
+| Template | Use case | Auto-detected when |
+|----------|----------|--------------------|
+| `standard` | Single application | Default |
+| `monorepo` | Multi-app workspaces | `turbo.json` or `turbo` in devDependencies |
+
+```bash
+ai-context init                        # auto-detects template
+ai-context init --template monorepo    # force a specific template
+```
+
 ## Contracts and Guarantees
 
 - Stable CLI behavior and exit codes: `docs/cli-contract.md`
@@ -33,7 +50,7 @@ pnpm exec ai-context verify
 
 ```bash
 ai-context templates
-ai-context init --template default
+ai-context init --template standard
 ai-context build
 ai-context build --check
 ai-context diff
@@ -62,6 +79,7 @@ pnpm typecheck
 
 ## Docs
 
+- `docs/content-guide.md`
 - `docs/configuration.md`
 - `docs/compatibility.md`
 - `docs/troubleshooting.md`
