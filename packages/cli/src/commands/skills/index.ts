@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { runSkillsList } from "./list.js";
+import { runSkillsCreate } from "./create.js";
 
 export function registerSkillsCommand(program: Command): void {
   const skills = program.command("skills").description("Manage repo skills");
@@ -22,7 +23,12 @@ export function registerSkillsCommand(program: Command): void {
     )
     .option("--with-references", "Scaffold a references/ directory", false)
     .option("--with-scripts", "Scaffold a scripts/ directory", false)
-    .action(() => {
-      console.log("(skills create — not yet implemented; arrives in Task 16)");
-    });
+    .action((name: string, opts: { description: string; scope: string[]; withReferences: boolean; withScripts: boolean }) =>
+      runSkillsCreate(name, {
+        description: opts.description,
+        scope: opts.scope,
+        withReferences: Boolean(opts.withReferences),
+        withScripts: Boolean(opts.withScripts),
+      })
+    );
 }
