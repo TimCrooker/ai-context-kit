@@ -11,6 +11,7 @@ import {
 import { detectTemplate, getTemplate, listTemplates } from "@timothycrooker/ai-context-templates";
 import { Command } from "commander";
 import { resolveCliVersion } from "./version.js";
+import { registerSkillsCommand } from "./commands/skills/index.js";
 
 const program = new Command();
 
@@ -18,6 +19,8 @@ program
   .name("ai-context")
   .description("Generate and verify shared Codex + Claude context files")
   .version(resolveCliVersion());
+
+registerSkillsCommand(program);
 
 program
   .command("init")
