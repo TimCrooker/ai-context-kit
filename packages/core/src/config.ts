@@ -4,7 +4,7 @@ import { exists, readUtf8 } from "./io.js";
 import { ContextError } from "./errors.js";
 import { parseFrontMatter } from "./front-matter.js";
 import { rel, toPosix } from "./path-utils.js";
-import type { ContextModule, Manifest, ScopeDefinition, ScopeManifest } from "./types.js";
+import type { ContextModule, Manifest, ScopeDefinition, ScopeManifest, SkillsManifestBlock } from "./types.js";
 
 const DEFAULT_MANIFEST_PATH = ".ai/context/manifest.json";
 
@@ -67,7 +67,45 @@ export function loadManifest(cwd: string, manifestPath?: string): Manifest {
     asString(parsed.claudeOutput, "Manifest claudeOutput must be non-empty when provided");
   }
 
-  return parsed;
+  let skills: SkillsManifestBlock | undefined;
+  const skillsRaw = (parsed as Record<string, unknown>).skills;
+  if (skillsRaw !== undefined) {
+    if (!skillsRaw || typeof skillsRaw !== "object") {
+      throw new ContextError(
+        "AICTX_CONFIG_INVALID",
+        `manifest.skills must be an object (${resolved})`
+      );
+    }
+    const block = skillsRaw as Record<string, unknown>;
+    if (typeof block.source !== "string" || block.source.length === 0) {
+      throw new ContextError(
+        "AICTX_CONFIG_INVALID",
+        `manifest.skills.source is required (${resolved})`
+      );
+    }
+    if (!Array.isArray(block.mirrors) || block.mirrors.length === 0) {
+      throw new ContextError(
+        "AICTX_CONFIG_INVALID",
+        `manifest.skills.mirrors must be a non-empty array — at least one mirror path required (${resolved})`
+      );
+    }
+    for (const mirror of block.mirrors) {
+      if (typeof mirror !== "string" || mirror.length === 0) {
+        throw new ContextError(
+          "AICTX_CONFIG_INVALID",
+          `manifest.skills.mirrors entries must be non-empty strings (${resolved})`
+        );
+      }
+    }
+    const metaSkill = block.metaSkill === undefined ? true : Boolean(block.metaSkill);
+    skills = {
+      source: block.source,
+      mirrors: block.mirrors as string[],
+      metaSkill,
+    };
+  }
+
+  return { ...parsed, skills };
 }
 
 function validateScope(scope: ScopeDefinition, index: number): ScopeDefinition {
