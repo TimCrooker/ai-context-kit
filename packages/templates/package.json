@@ -16,7 +16,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --clean && cp -R src/skills dist/skills",
+    "build": "tsup src/index.ts --format esm --dts --clean && rm -rf dist/skills && cp -R src/skills dist/skills",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
