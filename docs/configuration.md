@@ -59,3 +59,31 @@ Constraints:
 - `codexTarget: root` is invalid.
 - Generated output paths must be unique across all scopes.
 - By default, parity is enforced between Codex and Claude scoped outputs.
+
+## Skills
+
+The optional `skills` block in `manifest.json` enables the skills subsystem:
+
+```json
+{
+  "version": 1,
+  "modulesDir": ".ai/context/modules",
+  "scopesFile": ".ai/context/scopes.json",
+  "targets": { "root": "AGENTS.md", "api": "apps/api/AGENTS.md" },
+  "skills": {
+    "source": ".ai/skills",
+    "mirrors": [".agents/skills", ".claude/skills"],
+    "metaSkill": true
+  }
+}
+```
+
+### Field reference
+
+- `skills.source` (string, required) — directory containing skill source trees (one subdirectory per skill). Default convention: `.ai/skills`.
+- `skills.mirrors` (string[], required, non-empty) — where mirror symlinks are created. Default convention: `[".agents/skills", ".claude/skills"]`. Add `.cursor/skills` etc. to support additional CLIs.
+- `skills.metaSkill` (boolean, optional, default `true`) — when `true`, `ai-context init` and `init --upgrade` seed the kit's own `.ai/skills/ai-context-kit/` meta-skill. Set to `false` to opt out.
+
+### Backward compatibility
+
+When the `skills` field is absent, the kit's skill machinery is entirely off — equivalent to 0.3.x behavior.
