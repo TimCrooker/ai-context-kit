@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import process from "node:process";
 import { ContextError } from "./errors.js";
 import { readUtf8, createSymlink, isSymlink, readSymlink, removeSymlink, copyDirRecursive, restoreExecBits, writeUtf8 } from "./io.js";
 import { parseFrontMatter } from "./front-matter.js";
@@ -221,4 +222,54 @@ export function planSkillMirrors(
   }
 
   return plans;
+}
+
+export interface ApplyMirrorOptions {
+  forceCopy?: boolean;
+  repoRoot?: string;
+}
+
+export interface ApplyMirrorResult {
+  written: SkillMirrorPlan[];
+  fallbackToCopy: SkillMirrorPlan[];
+  failed: { plan: SkillMirrorPlan; reason: string }[];
+}
+
+export function applySkillMirrors(
+  plans: SkillMirrorPlan[],
+  options: ApplyMirrorOptions = {}
+): ApplyMirrorResult {
+  const written: SkillMirrorPlan[] = [];
+  const fallbackToCopy: SkillMirrorPlan[] = [];
+  const failed: { plan: SkillMirrorPlan; reason: string }[] = [];
+
+  const forceFallback =
+    options.forceCopy === true || process.env.AI_CONTEXT_FORCE_COPY_FALLBACK === "1";
+
+  for (const plan of plans) {
+    try {
+      if (forceFallback) {
+        createMirrorCopy(plan.source, plan.mirror, options.repoRoot);
+        fallbackToCopy.push({ ...plan, mode: "copy" });
+        continue;
+      }
+
+      try {
+        createMirrorSymlink(plan.source, plan.mirror);
+        written.push(plan);
+      } catch (error) {
+        if (error instanceof ContextError && error.code === "AICTX_SKILL_MIRROR_CONFLICT") {
+          throw error;
+        }
+        createMirrorCopy(plan.source, plan.mirror, options.repoRoot);
+        fallbackToCopy.push({ ...plan, mode: "copy" });
+      }
+    } catch (error) {
+      const reason =
+        error instanceof ContextError ? `[${error.code}] ${error.message}` : String(error);
+      failed.push({ plan, reason });
+    }
+  }
+
+  return { written, fallbackToCopy, failed };
 }
