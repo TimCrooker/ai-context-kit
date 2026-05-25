@@ -1,5 +1,17 @@
 # CLI Commands
 
+## Running the CLI
+
+`ai-context` is the canonical command name. If it's not on your PATH:
+
+- **Locally-installed (most common):** `pnpm exec ai-context <subcommand>` or `npx ai-context <subcommand>`
+- **From a kit source clone:** `node packages/cli/dist/index.js <subcommand>` (requires the kit to have been built first with `pnpm build`)
+- **Globally-installed:** just `ai-context <subcommand>` works
+
+Throughout this doc, examples show `ai-context build` — substitute the appropriate form for your install.
+
+---
+
 All commands are invoked as `ai-context <subcommand>`.
 
 ## `init`

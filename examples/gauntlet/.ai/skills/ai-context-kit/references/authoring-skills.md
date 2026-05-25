@@ -4,6 +4,30 @@ A skill is an agent capability that loads **on demand** — agents discover it f
 
 Skills follow the [agentskills.io](https://agentskills.io) spec.
 
+## Authoring workflow (REQUIRED)
+
+Adding a new skill takes 3 steps:
+
+1. **Create the source** at `.ai/skills/<name>/SKILL.md` (with `name:` matching the directory and a `description:` field).
+2. **Run `ai-context build`** from the repo root. This creates mirror symlinks at `.agents/skills/<name>` and `.claude/skills/<name>`. **You cannot skip this step** — without it, no agent CLI will discover your skill.
+3. **Verify** with `ai-context skills list` — your new skill should appear with mirror state `symlink`.
+
+**Easy mode:** `ai-context skills create <name> --description "..."` does all three steps for you. Prefer this over manual scaffold-then-build whenever possible.
+
+### What NOT to do
+
+- **Do not** create files directly in `.agents/skills/` or `.claude/skills/`. Those locations are symlink targets managed by the kit. Manually-created files will be inconsistent with the source and either confuse agents or get overwritten on the next build.
+- **Do not** rely on automatic synchronization — there is none. The kit only updates mirrors when you run `ai-context build`.
+- **Do not** invoke `cp`, `ln -s`, or manual `mkdir` on the mirror paths. Always use `ai-context build`.
+
+### If the CLI isn't on your PATH
+
+Use one of these forms depending on how the kit is installed:
+
+- **Local install (the common case):** `pnpm exec ai-context build` or `npx ai-context build`
+- **Global install:** `ai-context build`
+- **Development (kit source clone):** `node packages/cli/dist/index.js build` (requires the kit to have been built first)
+
 ## Source location
 
 Skills live in a **directory**, not a single file:
@@ -55,7 +79,7 @@ Good: `"Use when writing or debugging Express route handlers, controllers, or se
 
 ## Creating a skill
 
-### Via CLI (recommended)
+### Via CLI (recommended — runs `ai-context build` for you)
 
 ```bash
 ai-context skills create my-skill \
@@ -64,13 +88,13 @@ ai-context skills create my-skill \
   --with-scripts
 ```
 
-The kit scaffolds the directory, writes `SKILL.md`, and runs `ai-context build` to create mirrors.
+The kit scaffolds the directory, writes `SKILL.md`, and **automatically runs `ai-context build`** to create mirror symlinks. This is the easiest path and avoids the most common mistake (forgetting to run `build` after creating the source).
 
 ### Manually
 
 1. Create the directory: `mkdir -p .ai/skills/my-skill`
 2. Write `.ai/skills/my-skill/SKILL.md` with valid frontmatter
-3. Run `ai-context build` — the kit creates mirrors automatically
+3. **Run `ai-context build`** — this step is required. The kit creates mirror symlinks at `.agents/skills/my-skill` and `.claude/skills/my-skill`. **Do not skip it and do not create those files manually.**
 
 ## Mirror semantics
 

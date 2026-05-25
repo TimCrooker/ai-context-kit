@@ -20,10 +20,26 @@ This repo's `AGENTS.md`, `CLAUDE.md`, `.claude/rules/*.md`, `.agents/skills/*`, 
 | Look up an `ai-context` CLI command | `references/cli-commands.md` |
 | Pick what kind of content to put in a module vs a skill vs a rule | `references/content-guide.md` |
 
+## Authoring workflow (read this first)
+
+When creating or editing a skill, follow this exact sequence:
+
+1. **Create/edit the source** at `.ai/skills/<name>/SKILL.md` — this is the only file you touch.
+2. **Run `ai-context build`** from the repo root. **This step is non-optional.** The mirrors at `.agents/skills/<name>` and `.claude/skills/<name>` are NOT real-time-synced — they only exist after you run the build.
+3. **Verify** with `ai-context skills list` — your skill should appear with mirror state `symlink`.
+
+**Easy mode:** `ai-context skills create <name> --description "..."` does all three steps for you. Prefer it over manual scaffold-then-build.
+
+### What NOT to do
+
+- **Do NOT** create files directly in `.agents/skills/<name>/` or `.claude/skills/<name>/`. Those paths are symlinks managed by the kit. Any file you write there will either be clobbered on the next `ai-context build` or persist as a broken non-symlink that diverges silently from the source.
+- **Do NOT** skip `ai-context build` after creating or editing a skill source. Without it, no agent CLI will discover your skill — the mirrors simply don't exist yet.
+- **Do NOT** use `cp`, `ln -s`, or manual `mkdir` on the mirror paths. Always let `ai-context build` manage them.
+
 ## After any edit
 
 ```bash
-ai-context build       # regenerate outputs
+ai-context build       # regenerate outputs — always run this after editing .ai/
 ai-context verify      # CI-friendly: fails if outputs are stale
 ai-context doctor      # diagnose config / mirror issues
 ```
@@ -44,5 +60,6 @@ ai-context doctor      # diagnose config / mirror issues
 ## Don't
 
 - Don't edit generated `AGENTS.md` / `CLAUDE.md` / `.claude/rules/*.md` — edits get overwritten on next `ai-context build`.
+- Don't write skill files directly into `.agents/skills/` or `.claude/skills/` — these are symlinks. Write to `.ai/skills/<name>/`, then run `ai-context build`.
 - Don't commit broken symlinks in `.agents/skills/` or `.claude/skills/`. Run `ai-context doctor` to detect them.
 - Don't duplicate content between a module and a skill. Modules are always-in-context summary; skills are on-demand depth.
