@@ -68,7 +68,7 @@ export function loadManifest(cwd: string, manifestPath?: string): Manifest {
   }
 
   let skills: SkillsManifestBlock | undefined;
-  const skillsRaw = (parsed as Record<string, unknown>).skills;
+  const skillsRaw = (parsed as unknown as { skills?: unknown }).skills;
   if (skillsRaw !== undefined) {
     if (!skillsRaw || typeof skillsRaw !== "object") {
       throw new ContextError(

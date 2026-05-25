@@ -201,12 +201,12 @@ export function planSkillMirrors(
     if (explicitWildcard) {
       for (const id of targetIds) {
         if (id === "root") continue;
-        emissionRoots.push(path.join(repoRoot, scopeTargets[id]));
+        emissionRoots.push(path.join(repoRoot, scopeTargets[id]!));
       }
     } else {
       for (const id of scope) {
         if (id === "*") continue;
-        emissionRoots.push(path.join(repoRoot, scopeTargets[id]));
+        emissionRoots.push(path.join(repoRoot, scopeTargets[id]!));
       }
     }
 

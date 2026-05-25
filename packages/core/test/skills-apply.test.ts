@@ -30,7 +30,7 @@ describe("applySkillMirrors", () => {
     const result = applySkillMirrors(plans, { forceCopy: false });
     expect(result.written).toHaveLength(3);
     expect(result.failed).toHaveLength(0);
-    expect(fs.lstatSync(plans[0].mirror).isSymbolicLink()).toBe(true);
+    expect(fs.lstatSync(plans[0]!.mirror).isSymbolicLink()).toBe(true);
   });
 
   it("falls back to copy when forceCopy is true", () => {
@@ -53,7 +53,7 @@ describe("applySkillMirrors", () => {
     const plans: SkillMirrorPlan[] = [{ source, mirror, mode: "symlink" }];
     const result = applySkillMirrors(plans, { forceCopy: false });
     expect(result.failed).toHaveLength(1);
-    expect(result.failed[0].reason).toMatch(/AICTX_SKILL_MIRROR_CONFLICT/);
+    expect(result.failed[0]!.reason).toMatch(/AICTX_SKILL_MIRROR_CONFLICT/);
     expect(result.written).toHaveLength(0);
   });
 });

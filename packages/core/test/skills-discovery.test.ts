@@ -35,9 +35,9 @@ describe("discoverSkills", () => {
 
     const skills = discoverSkills(tmp, ".ai/skills");
     expect(skills.map((s) => s.name).sort()).toEqual(["alpha", "beta"]);
-    expect(skills[0].dir).toBe(path.join(tmp, ".ai/skills/alpha"));
-    expect(skills[0].skillMdPath).toBe(path.join(tmp, ".ai/skills/alpha/SKILL.md"));
-    expect(skills[0].frontmatter.description).toBe("First");
+    expect(skills[0]!.dir).toBe(path.join(tmp, ".ai/skills/alpha"));
+    expect(skills[0]!.skillMdPath).toBe(path.join(tmp, ".ai/skills/alpha/SKILL.md"));
+    expect(skills[0]!.frontmatter.description).toBe("First");
   });
 
   it("errors when a skill directory lacks SKILL.md", () => {
