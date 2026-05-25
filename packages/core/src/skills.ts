@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { ContextError } from "./errors.js";
-import { readUtf8 } from "./io.js";
+import { readUtf8, createSymlink, isSymlink, readSymlink, removeSymlink } from "./io.js";
 import { parseFrontMatter } from "./front-matter.js";
 import { toPosix } from "./path-utils.js";
 import type { SkillFrontmatter, SkillSource } from "./types.js";
@@ -119,4 +119,25 @@ export function discoverSkills(cwd: string, sourceDir: string): SkillSource[] {
 export function computeSymlinkTarget(mirrorPath: string, sourcePath: string): string {
   const relative = path.relative(path.dirname(mirrorPath), sourcePath);
   return toPosix(relative);
+}
+
+export function createMirrorSymlink(sourceDir: string, mirrorPath: string): void {
+  const expectedTarget = computeSymlinkTarget(mirrorPath, sourceDir);
+
+  if (fs.existsSync(mirrorPath) || isSymlink(mirrorPath)) {
+    if (isSymlink(mirrorPath)) {
+      const current = readSymlink(mirrorPath);
+      if (current === expectedTarget) {
+        return; // idempotent
+      }
+      removeSymlink(mirrorPath);
+    } else {
+      throw new ContextError(
+        "AICTX_SKILL_MIRROR_CONFLICT",
+        `Cannot create skill mirror at ${mirrorPath}: a real file or directory exists there. Either delete it or move skill source elsewhere.`
+      );
+    }
+  }
+
+  createSymlink(expectedTarget, mirrorPath);
 }

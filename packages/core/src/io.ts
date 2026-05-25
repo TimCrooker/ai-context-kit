@@ -46,3 +46,39 @@ export function walkFiles(root: string, skipDirs: Set<string>): string[] {
   walk(root);
   return collected;
 }
+
+export function symlinkExists(linkPath: string): boolean {
+  try {
+    fs.lstatSync(linkPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function readSymlink(linkPath: string): string | null {
+  try {
+    return fs.readlinkSync(linkPath);
+  } catch {
+    return null;
+  }
+}
+
+export function isSymlink(linkPath: string): boolean {
+  try {
+    return fs.lstatSync(linkPath).isSymbolicLink();
+  } catch {
+    return false;
+  }
+}
+
+export function createSymlink(target: string, linkPath: string): void {
+  fs.mkdirSync(path.dirname(linkPath), { recursive: true });
+  fs.symlinkSync(target, linkPath, "dir");
+}
+
+export function removeSymlink(linkPath: string): void {
+  if (isSymlink(linkPath)) {
+    fs.unlinkSync(linkPath);
+  }
+}
