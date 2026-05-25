@@ -1,11 +1,18 @@
 export type AgentKind = "codex" | "claude";
 
+export interface SkillsManifestBlock {
+  source: string;
+  mirrors: string[];
+  metaSkill: boolean;
+}
+
 export interface Manifest {
   version: 1;
   modulesDir: string;
   scopesFile: string;
   targets: Record<string, string>;
   claudeOutput?: string;
+  skills?: SkillsManifestBlock;
 }
 
 export interface ScopeDefinition {
@@ -101,4 +108,36 @@ export interface TemplateFile {
 export interface Template {
   name: string;
   files: TemplateFile[];
+}
+
+export interface SkillFrontmatter {
+  name: string;
+  description: string;
+  scope?: string[];
+  license?: string;
+  compatibility?: string;
+  metadata?: Record<string, unknown>;
+  "allowed-tools"?: string | string[];
+  [extra: string]: unknown;
+}
+
+export interface SkillSource {
+  name: string;
+  dir: string;
+  skillMdPath: string;
+  frontmatter: SkillFrontmatter;
+}
+
+export interface SkillMirrorPlan {
+  source: string;
+  mirror: string;
+  mode: "symlink" | "copy";
+  reason?: string;
+}
+
+export interface SkillMirrorState {
+  path: string;
+  mode: "symlink" | "copy" | "missing" | "conflict";
+  target?: string;
+  expectedTarget?: string;
 }

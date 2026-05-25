@@ -22,6 +22,20 @@ const MANIFEST_SCHEMA = JSON.stringify(
 					minLength: 1,
 				},
 			},
+			skills: {
+				type: "object",
+				additionalProperties: false,
+				required: ["source", "mirrors"],
+				properties: {
+					source: { type: "string", minLength: 1 },
+					mirrors: {
+						type: "array",
+						minItems: 1,
+						items: { type: "string", minLength: 1 },
+					},
+					metaSkill: { type: "boolean" },
+				},
+			},
 		},
 	},
 	null,
