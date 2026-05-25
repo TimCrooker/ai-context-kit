@@ -1,0 +1,21 @@
+Add a new markdown file to `.ai/context/modules/` and rebuild. Concretely:
+
+1. **Create the module file** — `.ai/context/modules/NNN-<slug>.md` with frontmatter:
+   ```markdown
+   ---
+   id: <slug>
+   targets: [root, api, web]   # any subset of targets defined in manifest.json
+   order: 20                    # controls inlining order
+   ---
+
+   # Your content here
+   ```
+   The `NNN-` numeric prefix on the filename keeps modules sortable on disk; `order` controls actual render order. Match the shape of the existing `.ai/context/modules/010-overview.md:1-10`.
+
+2. **Pick valid targets** — must match keys in `.ai/context/manifest.json:5-9` (currently `root`, `api`, `web`). To add a brand-new target, also register it there and add a corresponding scope in `.ai/context/scopes.json:3-19`.
+
+3. **Rebuild** — run `ai-context build` from the repo root. Per the project `CLAUDE.md`, that regenerates `AGENTS.md`, `CLAUDE.md`, `.claude/rules/*.md`, and the skills mirrors. Don't hand-edit the generated files.
+
+**Files cited:** `.ai/context/manifest.json`, `.ai/context/scopes.json`, `.ai/context/modules/010-overview.md`, and the project `CLAUDE.md` (in the working directory).
+
+One caveat: the project `CLAUDE.md` points at an `/ai-context-kit` skill for authoring guidance, but that skill isn't loaded in this session's skill list — so the above is reconstructed from the repo files rather than from the canonical skill. If you want the fully blessed workflow, invoke that skill directly.

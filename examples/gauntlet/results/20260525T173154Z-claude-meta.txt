@@ -1,0 +1,19 @@
+To add a new context module to this repo:
+
+1. Create a new file in `.ai/context/modules/` — that's the directory `manifest.json` points to via `modulesDir`. Follow the existing naming convention `NNN-slug.md` (e.g. `020-architecture.md`) so ordering is explicit.
+
+2. Give it frontmatter matching the existing pattern in `.ai/context/modules/010-overview.md:1-5`:
+   ```yaml
+   ---
+   id: <slug>
+   targets: [root, api, web]   # which manifest targets to inline into
+   order: 20
+   ---
+   ```
+   `targets` must be a subset of the keys defined under `targets` in `.ai/context/manifest.json:5-9` (`root`, `api`, `web`).
+
+3. Write the body. Keep root-targeted modules under ~80 lines and lead with gotchas/verification/conventions per `docs/content-guide.md:96-107`.
+
+4. Run `ai-context build` from the repo root. This regenerates `AGENTS.md`, `CLAUDE.md`, and the per-target files — never edit those by hand (the CLAUDE.md header makes this explicit).
+
+**Primary citation:** `examples/gauntlet/.ai/context/modules/010-overview.md` for the module file shape, and `docs/configuration.md:12-29` for the manifest contract that governs where modules live and which targets they can map to.

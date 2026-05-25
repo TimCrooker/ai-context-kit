@@ -137,7 +137,7 @@ fi
 if [ "$SKIP_GEMINI" = "0" ] && command -v gemini >/dev/null 2>&1; then
   echo "[gauntlet] Stage 6: Gemini headless..."
   GEMINI_OUT="$RESULTS_DIR/$TIMESTAMP-gemini.txt"
-  gemini -p "List the names of every skill available in this repository. Output only the names, one per line." > "$GEMINI_OUT" 2>&1 || true
+  gemini --skip-trust -p "List the names of every skill available in this repository. Output only the names, one per line." > "$GEMINI_OUT" 2>&1 || true
   EXPECTED=("plain-skill" "skill-with-refs" "skill-with-scripts" "router-skill")
   MISSING=()
   for name in "${EXPECTED[@]}"; do
