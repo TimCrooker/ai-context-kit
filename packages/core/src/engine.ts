@@ -421,14 +421,36 @@ export function initProject(cwd: string, template: Template, options: InitOption
 
   for (const file of template.files) {
     const abs = path.join(cwd, file.path);
-    if (fs.existsSync(abs) && !options.force) {
+    const fileExists = fs.existsSync(abs);
+    const isMetaSkillFile = file.path.startsWith(".ai/skills/ai-context-kit/");
+
+    if (fileExists && !options.force) {
+      if (options.upgrade) {
+        if (isMetaSkillFile && options.refreshMetaSkill) {
+          writeUtf8(abs, file.content.endsWith("\n") ? file.content : `${file.content}\n`);
+          written.push(file.path);
+        }
+        continue; // skip existing files in upgrade mode
+      }
       throw new ContextError(
         "AICTX_INIT_FAILED",
         `Refusing to overwrite existing file without --force: ${toPosix(path.relative(cwd, abs))}`
       );
     }
+
     writeUtf8(abs, file.content.endsWith("\n") ? file.content : `${file.content}\n`);
     written.push(file.path);
+  }
+
+  if (options.upgrade) {
+    try {
+      const buildResult = buildAll(cwd);
+      for (const f of buildResult.written) {
+        if (!written.includes(f)) written.push(f);
+      }
+    } catch {
+      // non-fatal in upgrade mode
+    }
   }
 
   return written.sort((a, b) => a.localeCompare(b));

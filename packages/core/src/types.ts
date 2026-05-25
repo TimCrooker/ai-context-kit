@@ -98,6 +98,8 @@ export interface DiffReport {
 export interface InitOptions {
   force?: boolean;
   includeExampleScopes?: boolean;
+  upgrade?: boolean;
+  refreshMetaSkill?: boolean;
 }
 
 export interface TemplateFile {
