@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { ContextError } from "./errors.js";
-import { readUtf8, createSymlink, isSymlink, readSymlink, removeSymlink } from "./io.js";
+import { readUtf8, createSymlink, isSymlink, readSymlink, removeSymlink, copyDirRecursive, restoreExecBits, writeUtf8 } from "./io.js";
 import { parseFrontMatter } from "./front-matter.js";
 import { toPosix } from "./path-utils.js";
 import type { SkillFrontmatter, SkillSource } from "./types.js";
@@ -140,4 +140,22 @@ export function createMirrorSymlink(sourceDir: string, mirrorPath: string): void
   }
 
   createSymlink(expectedTarget, mirrorPath);
+}
+
+const COPY_BANNER_PREFIX = "<!-- _generated: do not edit here.";
+
+export function createMirrorCopy(sourceDir: string, mirrorPath: string, repoRoot?: string): void {
+  if (fs.existsSync(mirrorPath)) {
+    fs.rmSync(mirrorPath, { recursive: true, force: true });
+  }
+  copyDirRecursive(sourceDir, mirrorPath);
+  restoreExecBits(mirrorPath);
+
+  const skillMdPath = path.join(mirrorPath, "SKILL.md");
+  const relSource = repoRoot
+    ? path.relative(repoRoot, path.join(sourceDir, "SKILL.md"))
+    : path.relative(path.dirname(mirrorPath), path.join(sourceDir, "SKILL.md"));
+  const body = readUtf8(skillMdPath);
+  const banner = `${COPY_BANNER_PREFIX} Source: ${toPosix(relSource)} -->\n`;
+  writeUtf8(skillMdPath, banner + body);
 }
