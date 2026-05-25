@@ -3,7 +3,7 @@ export type AgentKind = "codex" | "claude";
 export interface SkillsManifestBlock {
   source: string;
   mirrors: string[];
-  metaSkill: boolean;
+  metaSkill?: boolean;
 }
 
 export interface Manifest {
@@ -118,6 +118,7 @@ export interface SkillFrontmatter {
   compatibility?: string;
   metadata?: Record<string, unknown>;
   "allowed-tools"?: string | string[];
+  // Allow agentskills.io-spec extension fields and Claude/Codex/Gemini-specific keys
   [extra: string]: unknown;
 }
 
