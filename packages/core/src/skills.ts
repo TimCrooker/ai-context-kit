@@ -1,6 +1,9 @@
+import fs from "node:fs";
+import path from "node:path";
 import { ContextError } from "./errors.js";
+import { readUtf8 } from "./io.js";
 import { parseFrontMatter } from "./front-matter.js";
-import type { SkillFrontmatter } from "./types.js";
+import type { SkillFrontmatter, SkillSource } from "./types.js";
 
 const SKILL_NAME_PATTERN = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
 const MAX_NAME_LENGTH = 64;
@@ -78,4 +81,36 @@ export function parseSkillFrontmatter(
     description,
     scope,
   } as SkillFrontmatter;
+}
+
+export function discoverSkills(cwd: string, sourceDir: string): SkillSource[] {
+  const absSourceDir = path.isAbsolute(sourceDir) ? sourceDir : path.join(cwd, sourceDir);
+  if (!fs.existsSync(absSourceDir)) {
+    return [];
+  }
+
+  const entries = fs.readdirSync(absSourceDir, { withFileTypes: true });
+  const results: SkillSource[] = [];
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    if (entry.name.startsWith(".")) continue;
+
+    const dir = path.join(absSourceDir, entry.name);
+    const skillMdPath = path.join(dir, "SKILL.md");
+    if (!fs.existsSync(skillMdPath)) {
+      throw new ContextError(
+        "AICTX_SKILL_MISSING_FILE",
+        `SKILL.md not found in ${dir}`
+      );
+    }
+
+    const raw = readUtf8(skillMdPath);
+    const frontmatter = parseSkillFrontmatter(raw, entry.name, skillMdPath);
+
+    results.push({ name: entry.name, dir, skillMdPath, frontmatter });
+  }
+
+  results.sort((a, b) => a.name.localeCompare(b.name));
+  return results;
 }
