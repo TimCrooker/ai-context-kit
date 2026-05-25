@@ -1,11 +1,14 @@
 import { Command } from "commander";
+import { runSkillsList } from "./list.js";
 
 export function registerSkillsCommand(program: Command): void {
   const skills = program.command("skills").description("Manage repo skills");
 
-  skills.command("list").description("List discovered skills with mirror status").action(() => {
-    console.log("(skills list — not yet implemented; arrives in Task 15)");
-  });
+  skills
+    .command("list")
+    .description("List discovered skills with mirror status")
+    .option("--json", "Emit JSON output", false)
+    .action((opts: { json: boolean }) => runSkillsList({ json: Boolean(opts.json) }));
 
   skills
     .command("create <name>")
