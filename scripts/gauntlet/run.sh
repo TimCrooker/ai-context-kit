@@ -21,6 +21,26 @@ for arg in "$@"; do
   esac
 done
 
+# ---------------------------------------------------------------------------
+# CLI invocation helpers with the right permission flags for headless authoring
+#
+# Claude:  --dangerously-skip-permissions  — allows writes without per-tool prompts
+# Codex:   --dangerously-bypass-approvals-and-sandbox  — the --full-auto flag
+#          sandboxes writes to .agents/; this flag is required for skill authoring
+#          tests. Only safe against a kit-owned fixture (never production repos).
+# Gemini:  --skip-trust --yolo  — suppresses interactive trust prompts and
+#          auto-approves writes
+# ---------------------------------------------------------------------------
+claude_authoring() {
+  claude --dangerously-skip-permissions -p "$1"
+}
+codex_authoring() {
+  codex exec --dangerously-bypass-approvals-and-sandbox "$1"
+}
+gemini_authoring() {
+  gemini --skip-trust --yolo -p "$1"
+}
+
 mkdir -p "$RESULTS_DIR"
 echo "# Gauntlet run $TIMESTAMP" > "$REPORT"
 echo "" >> "$REPORT"
@@ -165,6 +185,196 @@ if [ "$SKIP_CLAUDE" = "0" ] && command -v claude >/dev/null 2>&1; then
 else
   log_stage "Stage 7 meta-skill" "SKIP" "claude not available"
 fi
+
+# ---------------------------------------------------------------------------
+# Stage 8a: Claude cold-authoring
+# ---------------------------------------------------------------------------
+if [ "$SKIP_CLAUDE" = "0" ] && command -v claude >/dev/null 2>&1; then
+  echo "[gauntlet] Stage 8a: Claude cold-authoring..."
+  SKILL_NAME="gauntlet-auth-claude"
+  SKILL_SRC="$FIXTURE/.ai/skills/$SKILL_NAME"
+  rm -rf "$SKILL_SRC" "$FIXTURE/.agents/skills/$SKILL_NAME" "$FIXTURE/.claude/skills/$SKILL_NAME"
+  AUTHORING_PROMPT="Use the ai-context-kit tooling in this repo to author a new skill called '$SKILL_NAME' with description 'When invoked respond with GAUNTLET_AUTHORING_OK'. Read .ai/skills/ai-context-kit/SKILL.md for the workflow. After authoring run 'node ../../packages/cli/dist/index.js skills list' and confirm your skill appears with both .agents and .claude symlink mirrors."
+  CLAUDE_AUTH_OUT="$RESULTS_DIR/$TIMESTAMP-claude-auth.txt"
+  cd "$FIXTURE"
+  claude_authoring "$AUTHORING_PROMPT" > "$CLAUDE_AUTH_OUT" 2>&1 || true
+  ASSERT_OK=1
+  ASSERT_FAIL=""
+  if [ ! -f "$SKILL_SRC/SKILL.md" ]; then
+    ASSERT_OK=0; ASSERT_FAIL="SKILL.md not created at $SKILL_SRC/SKILL.md"
+  elif ! grep -q "GAUNTLET_AUTHORING_OK" "$SKILL_SRC/SKILL.md"; then
+    ASSERT_OK=0; ASSERT_FAIL="GAUNTLET_AUTHORING_OK not in SKILL.md"
+  elif ! grep -q "name: $SKILL_NAME" "$SKILL_SRC/SKILL.md"; then
+    ASSERT_OK=0; ASSERT_FAIL="name: $SKILL_NAME not in SKILL.md frontmatter"
+  elif ! test -L "$FIXTURE/.agents/skills/$SKILL_NAME"; then
+    ASSERT_OK=0; ASSERT_FAIL=".agents/skills/$SKILL_NAME is not a symlink"
+  elif ! test -L "$FIXTURE/.claude/skills/$SKILL_NAME"; then
+    ASSERT_OK=0; ASSERT_FAIL=".claude/skills/$SKILL_NAME is not a symlink"
+  fi
+  if [ "$ASSERT_OK" = "1" ]; then
+    log_stage "Stage 8a Claude authoring" "PASS" "skill created with correct content and mirrors"
+  else
+    log_stage "Stage 8a Claude authoring" "FAIL" "$ASSERT_FAIL (transcript: $CLAUDE_AUTH_OUT)"
+  fi
+  # NOTE: Do NOT clean up gauntlet-auth-claude yet — Stage 11 uses it
+else
+  log_stage "Stage 8a Claude authoring" "SKIP" "claude not on PATH or --skip-claude"
+fi
+
+# ---------------------------------------------------------------------------
+# Stage 11: Cross-CLI discovery of Claude-authored skill
+# Must run while gauntlet-auth-claude is still in place from Stage 8a
+# ---------------------------------------------------------------------------
+echo "[gauntlet] Stage 11: cross-CLI discovery of Claude-authored skill..."
+CROSS_SKILL="gauntlet-auth-claude"
+for cross_cli in codex gemini; do
+  CROSS_SKIP_VAR="SKIP_$(echo "$cross_cli" | tr '[:lower:]' '[:upper:]')"
+  CROSS_SKIP="${!CROSS_SKIP_VAR}"
+  if [ "$CROSS_SKIP" = "0" ] && command -v "$cross_cli" >/dev/null 2>&1; then
+    CROSS_OUT="$RESULTS_DIR/$TIMESTAMP-cross-$cross_cli.txt"
+    cd "$FIXTURE"
+    CROSS_PROMPT="List the names of every skill available in this repository, one per line."
+    case "$cross_cli" in
+      codex)  codex exec "$CROSS_PROMPT" > "$CROSS_OUT" 2>&1 || true ;;
+      gemini) gemini --skip-trust -p "$CROSS_PROMPT" > "$CROSS_OUT" 2>&1 || true ;;
+    esac
+    if grep -q "$CROSS_SKILL" "$CROSS_OUT"; then
+      log_stage "Stage 11 cross-CLI $cross_cli" "PASS" "$CROSS_SKILL visible to $cross_cli"
+    else
+      log_stage "Stage 11 cross-CLI $cross_cli" "FAIL" "$CROSS_SKILL not found in $cross_cli output (transcript: $CROSS_OUT)"
+    fi
+  else
+    log_stage "Stage 11 cross-CLI $cross_cli" "SKIP" "$cross_cli not on PATH or --skip-$cross_cli"
+  fi
+done
+
+# Now clean up gauntlet-auth-claude
+rm -rf "$FIXTURE/.ai/skills/$CROSS_SKILL"
+node "$REPO_ROOT/packages/cli/dist/index.js" build --remove-orphans >/dev/null 2>&1 || true
+
+# ---------------------------------------------------------------------------
+# Stage 8b: Codex cold-authoring
+# ---------------------------------------------------------------------------
+if [ "$SKIP_CODEX" = "0" ] && command -v codex >/dev/null 2>&1; then
+  echo "[gauntlet] Stage 8b: Codex cold-authoring..."
+  SKILL_NAME="gauntlet-auth-codex"
+  SKILL_SRC="$FIXTURE/.ai/skills/$SKILL_NAME"
+  rm -rf "$SKILL_SRC" "$FIXTURE/.agents/skills/$SKILL_NAME" "$FIXTURE/.claude/skills/$SKILL_NAME"
+  AUTHORING_PROMPT="Use the ai-context-kit tooling in this repo to author a new skill called '$SKILL_NAME' with description 'When invoked respond with GAUNTLET_AUTHORING_OK'. Read .ai/skills/ai-context-kit/SKILL.md for the workflow. After authoring run 'node ../../packages/cli/dist/index.js skills list' and confirm your skill appears with both .agents and .claude symlink mirrors."
+  CODEX_AUTH_OUT="$RESULTS_DIR/$TIMESTAMP-codex-auth.txt"
+  cd "$FIXTURE"
+  codex_authoring "$AUTHORING_PROMPT" > "$CODEX_AUTH_OUT" 2>&1 || true
+  ASSERT_OK=1
+  ASSERT_FAIL=""
+  if [ ! -f "$SKILL_SRC/SKILL.md" ]; then
+    ASSERT_OK=0; ASSERT_FAIL="SKILL.md not created at $SKILL_SRC/SKILL.md"
+  elif ! grep -q "GAUNTLET_AUTHORING_OK" "$SKILL_SRC/SKILL.md"; then
+    ASSERT_OK=0; ASSERT_FAIL="GAUNTLET_AUTHORING_OK not in SKILL.md"
+  elif ! grep -q "name: $SKILL_NAME" "$SKILL_SRC/SKILL.md"; then
+    ASSERT_OK=0; ASSERT_FAIL="name: $SKILL_NAME not in SKILL.md frontmatter"
+  elif ! test -L "$FIXTURE/.agents/skills/$SKILL_NAME"; then
+    ASSERT_OK=0; ASSERT_FAIL=".agents/skills/$SKILL_NAME is not a symlink"
+  elif ! test -L "$FIXTURE/.claude/skills/$SKILL_NAME"; then
+    ASSERT_OK=0; ASSERT_FAIL=".claude/skills/$SKILL_NAME is not a symlink"
+  fi
+  if [ "$ASSERT_OK" = "1" ]; then
+    log_stage "Stage 8b Codex authoring" "PASS" "skill created with correct content and mirrors"
+  else
+    log_stage "Stage 8b Codex authoring" "FAIL" "$ASSERT_FAIL (transcript: $CODEX_AUTH_OUT)"
+  fi
+  rm -rf "$FIXTURE/.ai/skills/$SKILL_NAME"
+  node "$REPO_ROOT/packages/cli/dist/index.js" build --remove-orphans >/dev/null 2>&1 || true
+else
+  log_stage "Stage 8b Codex authoring" "SKIP" "codex not on PATH or --skip-codex"
+fi
+
+# ---------------------------------------------------------------------------
+# Stage 8c: Gemini cold-authoring
+# ---------------------------------------------------------------------------
+if [ "$SKIP_GEMINI" = "0" ] && command -v gemini >/dev/null 2>&1; then
+  echo "[gauntlet] Stage 8c: Gemini cold-authoring..."
+  SKILL_NAME="gauntlet-auth-gemini"
+  SKILL_SRC="$FIXTURE/.ai/skills/$SKILL_NAME"
+  rm -rf "$SKILL_SRC" "$FIXTURE/.agents/skills/$SKILL_NAME" "$FIXTURE/.claude/skills/$SKILL_NAME"
+  AUTHORING_PROMPT="Use the ai-context-kit tooling in this repo to author a new skill called '$SKILL_NAME' with description 'When invoked respond with GAUNTLET_AUTHORING_OK'. Read .ai/skills/ai-context-kit/SKILL.md for the workflow. After authoring run 'node ../../packages/cli/dist/index.js skills list' and confirm your skill appears with both .agents and .claude symlink mirrors."
+  GEMINI_AUTH_OUT="$RESULTS_DIR/$TIMESTAMP-gemini-auth.txt"
+  cd "$FIXTURE"
+  gemini_authoring "$AUTHORING_PROMPT" > "$GEMINI_AUTH_OUT" 2>&1 || true
+  ASSERT_OK=1
+  ASSERT_FAIL=""
+  if [ ! -f "$SKILL_SRC/SKILL.md" ]; then
+    ASSERT_OK=0; ASSERT_FAIL="SKILL.md not created at $SKILL_SRC/SKILL.md"
+  elif ! grep -q "GAUNTLET_AUTHORING_OK" "$SKILL_SRC/SKILL.md"; then
+    ASSERT_OK=0; ASSERT_FAIL="GAUNTLET_AUTHORING_OK not in SKILL.md"
+  elif ! grep -q "name: $SKILL_NAME" "$SKILL_SRC/SKILL.md"; then
+    ASSERT_OK=0; ASSERT_FAIL="name: $SKILL_NAME not in SKILL.md frontmatter"
+  elif ! test -L "$FIXTURE/.agents/skills/$SKILL_NAME"; then
+    ASSERT_OK=0; ASSERT_FAIL=".agents/skills/$SKILL_NAME is not a symlink"
+  elif ! test -L "$FIXTURE/.claude/skills/$SKILL_NAME"; then
+    ASSERT_OK=0; ASSERT_FAIL=".claude/skills/$SKILL_NAME is not a symlink"
+  fi
+  if [ "$ASSERT_OK" = "1" ]; then
+    log_stage "Stage 8c Gemini authoring" "PASS" "skill created with correct content and mirrors"
+  else
+    log_stage "Stage 8c Gemini authoring" "FAIL" "$ASSERT_FAIL (transcript: $GEMINI_AUTH_OUT)"
+  fi
+  rm -rf "$FIXTURE/.ai/skills/$SKILL_NAME"
+  node "$REPO_ROOT/packages/cli/dist/index.js" build --remove-orphans >/dev/null 2>&1 || true
+else
+  log_stage "Stage 8c Gemini authoring" "SKIP" "gemini not on PATH or --skip-gemini"
+fi
+
+# ---------------------------------------------------------------------------
+# Stage 9: Reference loading per CLI
+# ---------------------------------------------------------------------------
+echo "[gauntlet] Stage 9: reference loading..."
+for refs_cli in claude codex gemini; do
+  REF_SKIP_VAR="SKIP_$(echo "$refs_cli" | tr '[:lower:]' '[:upper:]')"
+  REF_SKIP="${!REF_SKIP_VAR}"
+  if [ "$REF_SKIP" = "0" ] && command -v "$refs_cli" >/dev/null 2>&1; then
+    REFS_OUT="$RESULTS_DIR/$TIMESTAMP-$refs_cli-refs.txt"
+    cd "$FIXTURE"
+    REFS_PROMPT="Invoke the skill-with-refs skill — it tells you to read references/notes.md and respond with the literal first line. Respond with just that line."
+    case "$refs_cli" in
+      claude) claude -p "$REFS_PROMPT" > "$REFS_OUT" 2>&1 || true ;;
+      codex)  codex exec "$REFS_PROMPT" > "$REFS_OUT" 2>&1 || true ;;
+      gemini) gemini --skip-trust -p "$REFS_PROMPT" > "$REFS_OUT" 2>&1 || true ;;
+    esac
+    if grep -q "GAUNTLET_REFS_OK" "$REFS_OUT"; then
+      log_stage "Stage 9 $refs_cli refs" "PASS" "GAUNTLET_REFS_OK in output"
+    else
+      log_stage "Stage 9 $refs_cli refs" "FAIL" "GAUNTLET_REFS_OK not found (transcript: $REFS_OUT)"
+    fi
+  else
+    log_stage "Stage 9 $refs_cli refs" "SKIP" "$refs_cli not on PATH or --skip-$refs_cli"
+  fi
+done
+
+# ---------------------------------------------------------------------------
+# Stage 10: Script execution per CLI
+# ---------------------------------------------------------------------------
+echo "[gauntlet] Stage 10: script execution..."
+for scripts_cli in claude codex gemini; do
+  SCR_SKIP_VAR="SKIP_$(echo "$scripts_cli" | tr '[:lower:]' '[:upper:]')"
+  SCR_SKIP="${!SCR_SKIP_VAR}"
+  if [ "$SCR_SKIP" = "0" ] && command -v "$scripts_cli" >/dev/null 2>&1; then
+    SCRIPTS_OUT="$RESULTS_DIR/$TIMESTAMP-$scripts_cli-scripts.txt"
+    cd "$FIXTURE"
+    SCRIPTS_PROMPT="Invoke the skill-with-scripts skill — it tells you to execute scripts/probe.sh and respond with the stdout. Respond with just the output."
+    case "$scripts_cli" in
+      claude) claude -p "$SCRIPTS_PROMPT" > "$SCRIPTS_OUT" 2>&1 || true ;;
+      codex)  codex exec "$SCRIPTS_PROMPT" > "$SCRIPTS_OUT" 2>&1 || true ;;
+      gemini) gemini --skip-trust -p "$SCRIPTS_PROMPT" > "$SCRIPTS_OUT" 2>&1 || true ;;
+    esac
+    if grep -q "GAUNTLET_SCRIPT_OK" "$SCRIPTS_OUT"; then
+      log_stage "Stage 10 $scripts_cli scripts" "PASS" "GAUNTLET_SCRIPT_OK in output"
+    else
+      log_stage "Stage 10 $scripts_cli scripts" "FAIL" "GAUNTLET_SCRIPT_OK not found (transcript: $SCRIPTS_OUT)"
+    fi
+  else
+    log_stage "Stage 10 $scripts_cli scripts" "SKIP" "$scripts_cli not on PATH or --skip-$scripts_cli"
+  fi
+done
 
 echo ""
 echo "Report: $REPORT"

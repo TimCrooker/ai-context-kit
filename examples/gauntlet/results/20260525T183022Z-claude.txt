@@ -1,0 +1,6 @@
+ai-context-kit
+api-scoped-skill
+plain-skill
+router-skill
+skill-with-refs
+skill-with-scripts

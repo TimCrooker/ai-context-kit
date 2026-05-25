@@ -1,0 +1,8 @@
+Confirmed. The `gauntlet-auth-claude` skill appears in `skills list` with:
+
+- **source:** `.ai/skills/gauntlet-auth-claude`
+- **symlink:** `.agents/skills/gauntlet-auth-claude` ✓
+- **symlink:** `.claude/skills/gauntlet-auth-claude` ✓
+- **description:** "When invoked respond with GAUNTLET_AUTHORING_OK"
+
+It's also discoverable by Claude Code — visible in the auto-loaded skills list at the bottom of the output.

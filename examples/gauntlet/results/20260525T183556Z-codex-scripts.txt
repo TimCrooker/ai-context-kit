@@ -1,0 +1,40 @@
+Reading additional input from stdin...
+OpenAI Codex v0.125.0 (research preview)
+--------
+workdir: /Users/timcrooker/ai-context-kit/examples/gauntlet
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR, /Users/timcrooker/.codex/memories]
+reasoning effort: high
+reasoning summaries: none
+session id: 019e6070-6a27-7d12-8a6b-28b3e9d82699
+--------
+user
+Invoke the skill-with-scripts skill — it tells you to execute scripts/probe.sh and respond with the stdout. Respond with just the output.
+2026-05-25T18:40:41.112094Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer realm=\"OAuth\", error=\"invalid_token\", error_description=\"Missing or invalid access token\"" })
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+exec
+/bin/zsh -lc "sed -n '1,120p' .ai/skills/skill-with-scripts/SKILL.md && .ai/skills/skill-with-scripts/scripts/probe.sh" in /Users/timcrooker/ai-context-kit/examples/gauntlet
+ succeeded in 0ms:
+---
+name: skill-with-scripts
+description: Tests scripts/ discovery. When invoked, execute scripts/probe.sh and respond with its output.
+---
+
+# Skill with scripts
+
+Execute the bundled script: `${CLAUDE_SKILL_DIR}/scripts/probe.sh` (or equivalent relative path for non-Claude CLIs). Respond with its stdout.
+GAUNTLET_SCRIPT_OK
+
+hook: PostToolUse
+hook: PostToolUse Completed
+codex
+GAUNTLET_SCRIPT_OK
+hook: Stop
+hook: Stop Completed
+2026-05-25T18:40:53.203709Z ERROR codex_core::session: failed to record rollout items: thread 019e6070-6a27-7d12-8a6b-28b3e9d82699 not found
+tokens used
+7,611
+GAUNTLET_SCRIPT_OK
