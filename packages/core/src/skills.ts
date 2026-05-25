@@ -3,6 +3,7 @@ import path from "node:path";
 import { ContextError } from "./errors.js";
 import { readUtf8 } from "./io.js";
 import { parseFrontMatter } from "./front-matter.js";
+import { toPosix } from "./path-utils.js";
 import type { SkillFrontmatter, SkillSource } from "./types.js";
 
 const SKILL_NAME_PATTERN = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
@@ -113,4 +114,9 @@ export function discoverSkills(cwd: string, sourceDir: string): SkillSource[] {
 
   results.sort((a, b) => a.name.localeCompare(b.name));
   return results;
+}
+
+export function computeSymlinkTarget(mirrorPath: string, sourcePath: string): string {
+  const relative = path.relative(path.dirname(mirrorPath), sourcePath);
+  return toPosix(relative);
 }
