@@ -29,7 +29,8 @@
     "format:write": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "changeset publish"
+    "release": "changeset publish",
+    "gauntlet": "bash scripts/gauntlet/run.sh"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.6",
