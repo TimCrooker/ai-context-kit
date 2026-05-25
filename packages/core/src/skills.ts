@@ -4,7 +4,7 @@ import { ContextError } from "./errors.js";
 import { readUtf8, createSymlink, isSymlink, readSymlink, removeSymlink, copyDirRecursive, restoreExecBits, writeUtf8 } from "./io.js";
 import { parseFrontMatter } from "./front-matter.js";
 import { toPosix } from "./path-utils.js";
-import type { SkillFrontmatter, SkillSource } from "./types.js";
+import type { SkillFrontmatter, SkillSource, Manifest, SkillMirrorPlan } from "./types.js";
 
 const SKILL_NAME_PATTERN = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
 const MAX_NAME_LENGTH = 64;
@@ -158,4 +158,67 @@ export function createMirrorCopy(sourceDir: string, mirrorPath: string, repoRoot
   const body = readUtf8(skillMdPath);
   const banner = `${COPY_BANNER_PREFIX} Source: ${toPosix(relSource)} -->\n`;
   writeUtf8(skillMdPath, banner + body);
+}
+
+export function planSkillMirrors(
+  repoRoot: string,
+  manifest: Manifest,
+  skills: SkillSource[]
+): SkillMirrorPlan[] {
+  if (!manifest.skills) return [];
+
+  const targetIds = Object.keys(manifest.targets);
+  const scopeTargets = Object.fromEntries(
+    Object.entries(manifest.targets)
+      .filter(([id]) => id !== "root")
+      .map(([id, agentsPath]) => [id, path.posix.dirname(agentsPath.split(path.sep).join("/"))])
+  );
+
+  const plans: SkillMirrorPlan[] = [];
+
+  for (const skill of skills) {
+    const scope = skill.frontmatter.scope ?? [];
+    const explicitWildcard = scope.includes("*");
+    const scopeIds = explicitWildcard
+      ? targetIds.filter((id) => id !== "root")
+      : scope;
+
+    for (const scopeId of scopeIds) {
+      if (scopeId === "*") continue;
+      if (!targetIds.includes(scopeId)) {
+        throw new ContextError(
+          "AICTX_SKILL_SCOPE_UNKNOWN",
+          `Skill '${skill.name}' references undefined scope '${scopeId}'`
+        );
+      }
+    }
+
+    const emissionRoots: string[] = [];
+    if (scope.length === 0 || explicitWildcard) {
+      emissionRoots.push(repoRoot);
+    }
+    if (explicitWildcard) {
+      for (const id of targetIds) {
+        if (id === "root") continue;
+        emissionRoots.push(path.join(repoRoot, scopeTargets[id]));
+      }
+    } else {
+      for (const id of scope) {
+        if (id === "*") continue;
+        emissionRoots.push(path.join(repoRoot, scopeTargets[id]));
+      }
+    }
+
+    for (const root of emissionRoots) {
+      for (const mirror of manifest.skills.mirrors) {
+        plans.push({
+          source: skill.dir,
+          mirror: path.join(root, mirror, skill.name),
+          mode: "symlink",
+        });
+      }
+    }
+  }
+
+  return plans;
 }
