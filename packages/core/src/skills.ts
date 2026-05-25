@@ -1,0 +1,81 @@
+import { ContextError } from "./errors.js";
+import { parseFrontMatter } from "./front-matter.js";
+import type { SkillFrontmatter } from "./types.js";
+
+const SKILL_NAME_PATTERN = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
+const MAX_NAME_LENGTH = 64;
+const MAX_DESCRIPTION_LENGTH = 1024;
+
+export function parseSkillFrontmatter(
+  raw: string,
+  expectedName: string,
+  sourcePath: string
+): SkillFrontmatter {
+  const { meta } = parseFrontMatter(raw, sourcePath);
+
+  const name = meta.name;
+  if (typeof name !== "string" || name.length === 0) {
+    throw new ContextError(
+      "AICTX_SKILL_FRONTMATTER_INVALID",
+      `Skill name is required in ${sourcePath}`
+    );
+  }
+  if (name.length > MAX_NAME_LENGTH) {
+    throw new ContextError(
+      "AICTX_SKILL_NAME_INVALID",
+      `Skill name '${name}' exceeds ${MAX_NAME_LENGTH} chars (${sourcePath})`
+    );
+  }
+  if (!SKILL_NAME_PATTERN.test(name)) {
+    throw new ContextError(
+      "AICTX_SKILL_NAME_INVALID",
+      `Skill '${name}' has invalid name pattern in ${sourcePath} (must be [a-z0-9-], no leading/trailing/consecutive hyphens)`
+    );
+  }
+  if (name !== expectedName) {
+    throw new ContextError(
+      "AICTX_SKILL_NAME_INVALID",
+      `Skill name '${name}' does not match directory '${expectedName}' in ${sourcePath}`
+    );
+  }
+
+  const description = meta.description;
+  if (typeof description !== "string" || description.length === 0) {
+    throw new ContextError(
+      "AICTX_SKILL_FRONTMATTER_INVALID",
+      `Skill description is required in ${sourcePath}`
+    );
+  }
+  if (description.length > MAX_DESCRIPTION_LENGTH) {
+    throw new ContextError(
+      "AICTX_SKILL_FRONTMATTER_INVALID",
+      `Skill description exceeds ${MAX_DESCRIPTION_LENGTH} chars in ${sourcePath}`
+    );
+  }
+
+  let scope: string[] | undefined;
+  if (meta.scope !== undefined) {
+    if (!Array.isArray(meta.scope)) {
+      throw new ContextError(
+        "AICTX_SKILL_FRONTMATTER_INVALID",
+        `Skill scope must be an array in ${sourcePath}`
+      );
+    }
+    for (const entry of meta.scope) {
+      if (typeof entry !== "string") {
+        throw new ContextError(
+          "AICTX_SKILL_FRONTMATTER_INVALID",
+          `Skill scope entries must be strings in ${sourcePath}`
+        );
+      }
+    }
+    scope = meta.scope as string[];
+  }
+
+  return {
+    ...(meta as Record<string, unknown>),
+    name,
+    description,
+    scope,
+  } as SkillFrontmatter;
+}
