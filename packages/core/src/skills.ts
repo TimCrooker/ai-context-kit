@@ -273,3 +273,39 @@ export function applySkillMirrors(
 
   return { written, fallbackToCopy, failed };
 }
+
+export function findOrphanedSkillMirrors(
+  repoRoot: string,
+  manifest: Manifest,
+  activeSkillNames: string[]
+): string[] {
+  if (!manifest.skills) return [];
+
+  const active = new Set(activeSkillNames);
+  const orphans: string[] = [];
+
+  const mirrorBases: string[] = [];
+  for (const m of manifest.skills.mirrors) {
+    mirrorBases.push(path.join(repoRoot, m));
+  }
+  for (const [id, agentsPath] of Object.entries(manifest.targets)) {
+    if (id === "root") continue;
+    const scopeRoot = path.join(repoRoot, path.dirname(agentsPath));
+    for (const m of manifest.skills.mirrors) {
+      mirrorBases.push(path.join(scopeRoot, m));
+    }
+  }
+
+  for (const base of mirrorBases) {
+    if (!fs.existsSync(base)) continue;
+    for (const entry of fs.readdirSync(base, { withFileTypes: true })) {
+      const full = path.join(base, entry.name);
+      if (!isSymlink(full)) continue;
+      if (!active.has(entry.name)) {
+        orphans.push(full);
+      }
+    }
+  }
+
+  return orphans.sort();
+}
