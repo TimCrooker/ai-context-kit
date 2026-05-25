@@ -1,4 +1,5 @@
-import type { Template } from "@timothycrooker/ai-context-core";
+import type { Template } from "@timothycrooker/ai-context-core"
+import { bundleMetaSkill } from "./skills-bundler.js";
 
 const MANIFEST_SCHEMA = JSON.stringify(
 	{
@@ -128,6 +129,11 @@ export const STANDARD_TEMPLATE: Template = {
 					targets: {
 						root: "AGENTS.md",
 					},
+					skills: {
+						source: ".ai/skills",
+						mirrors: [".agents/skills", ".claude/skills"],
+						metaSkill: true,
+					},
 				},
 				null,
 				2,
@@ -247,5 +253,6 @@ export const STANDARD_TEMPLATE: Template = {
 				".ai/secrets.local.env",
 			].join("\n"),
 		},
+		...bundleMetaSkill(),
 	],
 };

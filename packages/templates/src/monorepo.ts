@@ -1,4 +1,5 @@
-import type { Template } from "@timothycrooker/ai-context-core";
+import type { Template } from "@timothycrooker/ai-context-core"
+import { bundleMetaSkill } from "./skills-bundler.js";
 
 const MANIFEST_SCHEMA = JSON.stringify(
 	{
@@ -20,6 +21,20 @@ const MANIFEST_SCHEMA = JSON.stringify(
 				additionalProperties: {
 					type: "string",
 					minLength: 1,
+				},
+			},
+			skills: {
+				type: "object",
+				additionalProperties: false,
+				required: ["source", "mirrors"],
+				properties: {
+					source: { type: "string", minLength: 1 },
+					mirrors: {
+						type: "array",
+						minItems: 1,
+						items: { type: "string", minLength: 1 },
+					},
+					metaSkill: { type: "boolean" },
 				},
 			},
 		},
@@ -115,6 +130,11 @@ export const MONOREPO_TEMPLATE: Template = {
 						root: "AGENTS.md",
 						api: "apps/api/AGENTS.md",
 						web: "apps/web/AGENTS.md",
+					},
+					skills: {
+						source: ".ai/skills",
+						mirrors: [".agents/skills", ".claude/skills"],
+						metaSkill: true,
 					},
 				},
 				null,
@@ -329,5 +349,6 @@ export const MONOREPO_TEMPLATE: Template = {
 				".ai/secrets.local.env",
 			].join("\n"),
 		},
+		...bundleMetaSkill(),
 	],
 };
