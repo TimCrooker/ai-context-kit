@@ -13,6 +13,12 @@ import { lintContent } from "./content-lint.js";
 import { exists, readUtf8, removeFile, walkFiles, writeUtf8 } from "./io.js";
 import { rel, toPosix } from "./path-utils.js";
 import { ContextError, formatContextError } from "./errors.js";
+import {
+  applySkillMirrors,
+  discoverSkills,
+  findOrphanedSkillMirrors,
+  planSkillMirrors,
+} from "./skills.js";
 import type {
   BuildOptions,
   BuildResult,
@@ -100,6 +106,49 @@ function buildInternal(cwd: string, options: BuildOptions): BuildResult {
   const outputs = collectGeneratedOutputs(cwd, manifest, scopeManifest, modules);
   const result = writeOutputs(cwd, outputs, options);
   result.warnings.push(...wiring.warnings);
+
+  if (manifest.skills) {
+    const skills = discoverSkills(cwd, manifest.skills.source);
+    const plans = planSkillMirrors(cwd, manifest, skills);
+    const activeNames = skills.map((s) => s.name);
+
+    if (!options.dryRun && !options.check) {
+      const apply = applySkillMirrors(plans, { repoRoot: cwd });
+      for (const plan of apply.written) {
+        result.written.push(path.relative(cwd, plan.mirror));
+      }
+      for (const plan of apply.fallbackToCopy) {
+        result.written.push(path.relative(cwd, plan.mirror));
+        result.warnings.push(
+          `Skill mirror at ${path.relative(cwd, plan.mirror)} used copy-fallback (no symlink support)`
+        );
+      }
+      for (const fail of apply.failed) {
+        result.warnings.push(`Skill mirror failed: ${fail.reason}`);
+      }
+      if (options.removeOrphans) {
+        const orphans = findOrphanedSkillMirrors(cwd, manifest, activeNames);
+        for (const orphan of orphans) {
+          fs.unlinkSync(orphan);
+          result.removed.push(path.relative(cwd, orphan));
+        }
+      }
+    } else {
+      // dryRun / check: predict what would change without touching disk
+      for (const plan of plans) {
+        if (!fs.existsSync(plan.mirror)) {
+          result.written.push(path.relative(cwd, plan.mirror));
+          result.upToDate = false;
+        }
+      }
+      if (options.removeOrphans) {
+        for (const orphan of findOrphanedSkillMirrors(cwd, manifest, activeNames)) {
+          result.removed.push(path.relative(cwd, orphan));
+        }
+      }
+    }
+  }
+
   return result;
 }
 
