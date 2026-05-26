@@ -1,0 +1,84 @@
+Reading additional input from stdin...
+OpenAI Codex v0.125.0 (research preview)
+--------
+workdir: /Users/timcrooker/ai-context-kit/examples/gauntlet
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: high
+reasoning summaries: none
+session id: 019e6031-bc37-7911-a071-9d2c7b79961e
+--------
+user
+List the names of every skill available in this repository. Output only the names, one per line.
+2026-05-25T17:32:13.662751Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer realm=\"OAuth\", error=\"invalid_token\", error_description=\"Missing or invalid access token\"" })
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+exec
+/bin/zsh -lc "find . -path '*/SKILL.md' -print" in /Users/timcrooker/ai-context-kit/examples/gauntlet
+ succeeded in 0ms:
+./.ai/skills/api-scoped-skill/SKILL.md
+./.ai/skills/skill-with-scripts/SKILL.md
+./.ai/skills/skill-with-refs/SKILL.md
+./.ai/skills/router-skill/SKILL.md
+./.ai/skills/plain-skill/SKILL.md
+
+hook: PostToolUse
+exec
+/bin/zsh -lc "rg --files .ai .agents .claude | rg '("'^|/)SKILL'"\\.md"'$|skills/.+'"'" in /Users/timcrooker/ai-context-kit/examples/gauntlet
+ succeeded in 0ms:
+.ai/skills/plain-skill/SKILL.md
+.ai/skills/skill-with-scripts/SKILL.md
+.ai/skills/router-skill/SKILL.md
+.ai/skills/skill-with-scripts/scripts/probe.sh
+.ai/skills/skill-with-refs/SKILL.md
+.ai/skills/api-scoped-skill/SKILL.md
+.ai/skills/skill-with-refs/references/notes.md
+
+hook: PostToolUse
+hook: PostToolUse Completed
+hook: PostToolUse Completed
+exec
+/bin/zsh -lc "find .agents .claude .ai -maxdepth 3 -type f -name 'SKILL.md' -print | sort" in /Users/timcrooker/ai-context-kit/examples/gauntlet
+ succeeded in 0ms:
+.ai/skills/api-scoped-skill/SKILL.md
+.ai/skills/plain-skill/SKILL.md
+.ai/skills/router-skill/SKILL.md
+.ai/skills/skill-with-refs/SKILL.md
+.ai/skills/skill-with-scripts/SKILL.md
+
+hook: PostToolUse
+exec
+/bin/zsh -lc 'find .agents/skills .claude/skills .ai/skills -maxdepth 2 -type d -print | sort' in /Users/timcrooker/ai-context-kit/examples/gauntlet
+ succeeded in 0ms:
+.agents/skills
+.ai/skills
+.ai/skills/api-scoped-skill
+.ai/skills/plain-skill
+.ai/skills/router-skill
+.ai/skills/skill-with-refs
+.ai/skills/skill-with-refs/references
+.ai/skills/skill-with-scripts
+.ai/skills/skill-with-scripts/scripts
+.claude/skills
+
+hook: PostToolUse
+hook: PostToolUse Completed
+hook: PostToolUse Completed
+codex
+api-scoped-skill
+plain-skill
+router-skill
+skill-with-refs
+skill-with-scripts
+hook: Stop
+hook: Stop Completed
+2026-05-25T17:32:33.377889Z ERROR codex_core::session: failed to record rollout items: thread 019e6031-bc37-7911-a071-9d2c7b79961e not found
+tokens used
+19,184
+api-scoped-skill
+plain-skill
+router-skill
+skill-with-refs
+skill-with-scripts

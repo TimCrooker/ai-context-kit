@@ -99,6 +99,10 @@ Set up the trusted publisher in npm for `TimCrooker/ai-context-kit` before runni
 - Claude: root `CLAUDE.md`, scoped `CLAUDE.md`, and optional path-scoped `.claude/rules/*.md`.
 - Shared context stays in `.ai/context/modules/*.md` and `.ai/rules/*.md`.
 
+## Skills (1.0+)
+
+ai-context-kit supports cross-CLI skills via the [agentskills.io](https://agentskills.io) open standard. Author once at `.ai/skills/<name>/SKILL.md`; the kit creates symlinks at `.agents/skills/<name>` (read by Codex, Gemini, Cursor, Goose, OpenCode, Aider, and 17+ other tools) and `.claude/skills/<name>` (read by Claude Code). See [docs/skills-guide.md](docs/skills-guide.md).
+
 ## License
 
 MIT

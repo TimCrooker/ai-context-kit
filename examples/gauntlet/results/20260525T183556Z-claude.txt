@@ -1,0 +1,5 @@
+plain-skill
+skill-with-refs
+skill-with-scripts
+api-scoped-skill
+router-skill

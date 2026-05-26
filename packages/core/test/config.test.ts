@@ -1,6 +1,7 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { loadManifest, loadModules, loadScopeManifest } from "../src/config.js";
 import { ContextError } from "../src/errors.js";
 import { copyFixture } from "./helpers.js";
@@ -56,5 +57,69 @@ describe("config validation", () => {
 
     const manifest = loadManifest(cwd);
     expect(() => loadScopeManifest(cwd, manifest)).toThrow(ContextError);
+  });
+});
+
+describe("loadManifest with skills block", () => {
+  let tmp: string;
+  beforeEach(() => {
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), "aickit-mfst-"));
+    fs.mkdirSync(path.join(tmp, ".ai/context"), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, ".ai/context/scopes.json"),
+      JSON.stringify({ version: 1, scopes: [{ id: "api" }] })
+    );
+  });
+  afterEach(() => fs.rmSync(tmp, { recursive: true, force: true }));
+
+  function writeManifest(extra: Record<string, unknown>): void {
+    fs.writeFileSync(
+      path.join(tmp, ".ai/context/manifest.json"),
+      JSON.stringify({
+        version: 1,
+        modulesDir: ".ai/context/modules",
+        scopesFile: ".ai/context/scopes.json",
+        targets: { root: "AGENTS.md" },
+        ...extra,
+      })
+    );
+  }
+
+  it("accepts manifest without skills block (backward compat)", () => {
+    writeManifest({});
+    const manifest = loadManifest(tmp);
+    expect(manifest.skills).toBeUndefined();
+  });
+
+  it("loads skills block with required fields", () => {
+    writeManifest({
+      skills: { source: ".ai/skills", mirrors: [".agents/skills", ".claude/skills"] },
+    });
+    const manifest = loadManifest(tmp);
+    expect(manifest.skills?.source).toBe(".ai/skills");
+    expect(manifest.skills?.mirrors).toEqual([".agents/skills", ".claude/skills"]);
+    expect(manifest.skills?.metaSkill).toBe(true); // default
+  });
+
+  it("rejects skills block without source", () => {
+    writeManifest({ skills: { mirrors: [".agents/skills"] } });
+    expect(() => loadManifest(tmp)).toThrow(/skills.source/);
+  });
+
+  it("rejects skills block with empty mirrors array", () => {
+    writeManifest({ skills: { source: ".ai/skills", mirrors: [] } });
+    expect(() => loadManifest(tmp)).toThrow(/mirrors.*at least one/);
+  });
+
+  it("respects explicit metaSkill: false", () => {
+    writeManifest({
+      skills: {
+        source: ".ai/skills",
+        mirrors: [".agents/skills"],
+        metaSkill: false,
+      },
+    });
+    const manifest = loadManifest(tmp);
+    expect(manifest.skills?.metaSkill).toBe(false);
   });
 });

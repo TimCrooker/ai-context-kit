@@ -1,0 +1,25 @@
+To add a new context module:
+
+1. **Create the file** at `.ai/context/modules/<NNN>-<name>.md` (e.g. `030-testing.md`). The `NNN` is a zero-padded sort prefix; leave gaps (10, 20, 30) so you can insert later.
+
+2. **Add required frontmatter** — all three fields are required:
+   ```yaml
+   ---
+   id: testing            # must match filename minus NNN- prefix and .md
+   targets:               # which generated outputs it lands in
+     - root               # target IDs from .ai/context/manifest.json
+   order: 30              # tiebreaker sort key (usually mirrors the prefix)
+   ---
+   ```
+
+3. **Write the body** — keep it lean (under ~80 lines). Modules are always-present context, so every targeted agent sees every line. Path-specific rules go in `.ai/rules/*.md` instead; on-demand depth goes in a skill.
+
+4. **Rebuild**:
+   ```bash
+   ai-context build      # regenerates AGENTS.md / CLAUDE.md / etc.
+   ai-context verify     # confirms outputs aren't stale
+   ```
+
+Never edit the generated `AGENTS.md` / `CLAUDE.md` — they're overwritten on every build.
+
+**Source:** `.claude/skills/ai-context-kit/references/authoring-modules.md` (full schema, aggregation rules, and a complete example), with the directory map and build commands from `.claude/skills/ai-context-kit/SKILL.md`.

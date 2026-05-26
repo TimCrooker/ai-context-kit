@@ -1,0 +1,40 @@
+Reading additional input from stdin...
+OpenAI Codex v0.125.0 (research preview)
+--------
+workdir: /Users/timcrooker/ai-context-kit/examples/gauntlet
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR, /Users/timcrooker/.codex/memories]
+reasoning effort: high
+reasoning summaries: none
+session id: 019e6595-a5c1-7190-b9d8-8b37c946b0e5
+--------
+user
+Invoke the skill-with-refs skill — it tells you to read references/notes.md and respond with the literal first line. Respond with just that line.
+2026-05-26T18:39:27.379048Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer realm=\"OAuth\", error=\"invalid_token\", error_description=\"Missing or invalid access token\"" })
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+exec
+/bin/zsh -lc "sed -n '1,120p' /Users/timcrooker/ai-context-kit/examples/gauntlet/.ai/skills/skill-with-refs/SKILL.md && sed -n '1p' /Users/timcrooker/ai-context-kit/examples/gauntlet/.ai/skills/skill-with-refs/references/notes.md" in /Users/timcrooker/ai-context-kit/examples/gauntlet
+ succeeded in 0ms:
+---
+name: skill-with-refs
+description: Tests references/ discovery. When invoked, read references/notes.md and respond with its content.
+---
+
+# Skill with references
+
+Read `references/notes.md` and respond with the literal first line of that file.
+GAUNTLET_REFS_OK
+
+hook: PostToolUse
+hook: PostToolUse Completed
+codex
+GAUNTLET_REFS_OK
+hook: Stop
+hook: Stop Completed
+2026-05-26T18:39:40.838206Z ERROR codex_core::session: failed to record rollout items: thread 019e6595-a5c1-7190-b9d8-8b37c946b0e5 not found
+tokens used
+19,074
+GAUNTLET_REFS_OK

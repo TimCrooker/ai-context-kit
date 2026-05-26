@@ -1,0 +1,7 @@
+Skill `gauntlet-auth-claude` was created via `ai-context skills create` (which scaffolded the source and ran the build), and `skills list` confirms it appears with both mirrors:
+
+- **source**: `.ai/skills/gauntlet-auth-claude`
+- **symlink**: `.agents/skills/gauntlet-auth-claude`
+- **symlink**: `.claude/skills/gauntlet-auth-claude`
+
+It's also already showing up in the Skill tool's available-skills list as `gauntlet-auth-claude: When invoked respond with GAUNTLET_AUTHORING_OK`.

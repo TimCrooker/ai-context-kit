@@ -1,0 +1,33 @@
+Reading additional input from stdin...
+OpenAI Codex v0.125.0 (research preview)
+--------
+workdir: /Users/timcrooker/ai-context-kit/examples/gauntlet
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR, /Users/timcrooker/.codex/memories]
+reasoning effort: high
+reasoning summaries: none
+session id: 019e6592-51b1-7531-8158-5a7e8e457ee8
+--------
+user
+List the names of every skill available in this repository. Output only the names, one per line.
+2026-05-26T18:35:49.485057Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer realm=\"OAuth\", error=\"invalid_token\", error_description=\"Missing or invalid access token\"" })
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+codex
+ai-context-kit
+plain-skill
+router-skill
+skill-with-refs
+skill-with-scripts
+hook: Stop
+hook: Stop Completed
+2026-05-26T18:36:01.337096Z ERROR codex_core::session: failed to record rollout items: thread 019e6592-51b1-7531-8158-5a7e8e457ee8 not found
+tokens used
+18,256
+ai-context-kit
+plain-skill
+router-skill
+skill-with-refs
+skill-with-scripts

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "scopes": [
+    {
+      "id": "api",
+      "codexTarget": "api",
+      "includes": [".ai/rules/api-rules.md"],
+      "codexAgents": ["apps/api/AGENTS.md"],
+      "claudeMemories": ["apps/api/CLAUDE.md"]
+    },
+    {
+      "id": "web",
+      "codexTarget": "web",
+      "includes": [".ai/rules/web-rules.md"],
+      "codexAgents": ["apps/web/AGENTS.md"],
+      "claudeMemories": ["apps/web/CLAUDE.md"]
+    }
+  ]
+}

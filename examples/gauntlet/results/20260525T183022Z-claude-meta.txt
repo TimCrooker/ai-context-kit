@@ -1,0 +1,9 @@
+To add a new context module:
+
+1. Create `.ai/context/modules/<NNN>-<name>.md` (e.g. `030-testing.md`) — `NNN` is a zero-padded sort prefix, leave gaps (10, 20, 30) for future inserts.
+2. Open with required YAML frontmatter — `id` (must match filename minus `NNN-` and `.md`), `targets` (array of target IDs from `.ai/context/manifest.json`, e.g. `root`), and `order` (integer tiebreaker, typically mirrors the prefix).
+3. Write the body — keep it lean (under ~80 lines); modules are always-loaded context.
+4. Run `ai-context build` from the repo root to regenerate `AGENTS.md` / `CLAUDE.md`. Never edit those files directly.
+5. Optionally `ai-context verify` to confirm outputs are fresh.
+
+**Source cited:** `.claude/skills/ai-context-kit/references/authoring-modules.md` (loaded via the `/ai-context-kit` skill referenced in `CLAUDE.md`).

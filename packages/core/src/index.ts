@@ -25,3 +25,13 @@ export { buildAll, diffGenerated, doctor, initProject, lintConfig, verifyAll } f
 export { computeDocChainBudget } from "./budget.js";
 export { lintContent } from "./content-lint.js";
 export type { ContentLintResult } from "./content-lint.js";
+export {
+  parseSkillFrontmatter,
+  discoverSkills,
+  planSkillMirrors,
+  applySkillMirrors,
+  findOrphanedSkillMirrors,
+  createMirrorSymlink,
+  createMirrorCopy,
+  computeSymlinkTarget,
+} from "./skills.js";

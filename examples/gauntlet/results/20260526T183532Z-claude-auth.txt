@@ -1,0 +1,7 @@
+Skill `gauntlet-auth-claude [root]` appears in `ai-context skills list` with both mirrors confirmed as symlinks:
+
+- `source: .ai/skills/gauntlet-auth-claude`
+- `symlink: .agents/skills/gauntlet-auth-claude`
+- `symlink: .claude/skills/gauntlet-auth-claude`
+
+Authored via `ai-context skills create` (which scaffolded source + ran build), then edited the body to specify the `GAUNTLET_AUTHORING_OK` response and rebuilt.

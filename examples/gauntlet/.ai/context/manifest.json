@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "modulesDir": ".ai/context/modules",
+  "scopesFile": ".ai/context/scopes.json",
+  "targets": {
+    "root": "AGENTS.md",
+    "api": "apps/api/AGENTS.md",
+    "web": "apps/web/AGENTS.md"
+  },
+  "claudeOutput": "CLAUDE.md",
+  "skills": {
+    "source": ".ai/skills",
+    "mirrors": [".agents/skills", ".claude/skills"],
+    "metaSkill": true
+  }
+}

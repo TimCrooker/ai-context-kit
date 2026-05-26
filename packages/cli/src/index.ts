@@ -11,6 +11,7 @@ import {
 import { detectTemplate, getTemplate, listTemplates } from "@timothycrooker/ai-context-templates";
 import { Command } from "commander";
 import { resolveCliVersion } from "./version.js";
+import { registerSkillsCommand } from "./commands/skills/index.js";
 
 const program = new Command();
 
@@ -19,16 +20,24 @@ program
   .description("Generate and verify shared Codex + Claude context files")
   .version(resolveCliVersion());
 
+registerSkillsCommand(program);
+
 program
   .command("init")
   .description("Initialize context scaffolding")
   .option("--template <name>", "template name (auto-detected if omitted)", "auto")
   .option("--force", "overwrite existing files", false)
-  .action((opts: { template: string; force: boolean }) => {
+  .option("--upgrade", "add missing files only; do not overwrite existing", false)
+  .option("--refresh-meta-skill", "refresh the ai-context-kit meta-skill", false)
+  .action((opts: { template: string; force: boolean; upgrade: boolean; refreshMetaSkill: boolean }) => {
     try {
       const templateName = opts.template === "auto" ? detectTemplate(process.cwd()) : opts.template;
       const template = getTemplate(templateName);
-      const written = initProject(process.cwd(), template, { force: Boolean(opts.force) });
+      const written = initProject(process.cwd(), template, {
+        force: Boolean(opts.force),
+        upgrade: Boolean(opts.upgrade),
+        refreshMetaSkill: Boolean(opts.refreshMetaSkill),
+      });
       for (const file of written) {
         console.log(`created: ${file}`);
       }
