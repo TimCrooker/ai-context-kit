@@ -263,12 +263,21 @@ export function checkApplyPreconditions(cwd: string): void {
     );
   }
 
-  // 2. Clean tree
-  const status = execSync("git status --porcelain", { cwd }).toString().trim();
-  if (status.length > 0) {
+  // 2. Clean tree (exclude the migration plan file itself — it's always written before apply)
+  const statusLines = execSync("git status --porcelain", { cwd })
+    .toString()
+    .split("\n")
+    .filter((line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return false;
+      // Allow the plan file to be untracked/modified — it's expected before apply
+      const filePart = trimmed.replace(/^[? MA]+\s+/, "");
+      return filePart !== MIGRATE_PLAN_REL_PATH;
+    });
+  if (statusLines.length > 0) {
     throw new ContextError(
       "AICTX_MIGRATE_DIRTY_TREE",
-      `Git working tree is not clean. Commit or stash changes before running migrate apply.\n${status}`
+      `Git working tree is not clean. Commit or stash changes before running migrate apply.\n${statusLines.join("\n")}`
     );
   }
 
@@ -343,6 +352,70 @@ export function executeConsolidateSymlink(cwd: string, entry: MigrateEntry): voi
   }
 
   gitCommit(cwd, `chore(migrate): consolidate_symlink ${entry.name}\n\n${entry.rationale}`);
+}
+
+export interface ApplyPlanOptions {
+  dryRun?: boolean;
+}
+
+export interface ApplyPlanReport {
+  applied: { name: string; action: MigrateActionType }[];
+  skipped: { name: string; reason: string }[];
+  failed: { name: string; reason: string }[];
+}
+
+export function applyPlan(cwd: string, options: ApplyPlanOptions = {}): ApplyPlanReport {
+  checkApplyPreconditions(cwd);
+  const plan = readPlan(cwd);
+
+  const report: ApplyPlanReport = { applied: [], skipped: [], failed: [] };
+
+  for (const entry of plan.entries) {
+    if (entry.applied_at !== null) {
+      report.skipped.push({ name: entry.name, reason: `already applied at ${entry.applied_at}` });
+      continue;
+    }
+    if (entry.action === "keep_existing" || entry.action === "REVIEW") {
+      report.skipped.push({ name: entry.name, reason: `action is ${entry.action}; no-op` });
+      continue;
+    }
+
+    if (options.dryRun) {
+      report.applied.push({ name: entry.name, action: entry.action });
+      continue;
+    }
+
+    try {
+      switch (entry.action) {
+        case "move_dir":
+          executeMoveDir(cwd, entry);
+          break;
+        case "promote_bare_md":
+          executePromoteBareMd(cwd, entry);
+          break;
+        case "consolidate_symlink":
+          executeConsolidateSymlink(cwd, entry);
+          break;
+      }
+      entry.applied_at = new Date().toISOString();
+      report.applied.push({ name: entry.name, action: entry.action });
+    } catch (error) {
+      const reason = error instanceof ContextError ? `[${error.code}] ${error.message}` : String(error);
+      report.failed.push({ name: entry.name, reason });
+      throw new ContextError(
+        "AICTX_MIGRATE_ENTRY_FAILED",
+        `Failed to apply entry '${entry.name}': ${reason}. Migration halted. Fix and re-run.`
+      );
+    }
+  }
+
+  // Mark plan as applied
+  if (!options.dryRun) {
+    plan.summary.applied = report.failed.length === 0;
+    writePlan(cwd, plan, { force: true });
+  }
+
+  return report;
 }
 
 export function executePromoteBareMd(cwd: string, entry: MigrateEntry): void {
