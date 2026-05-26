@@ -12,6 +12,7 @@ import { detectTemplate, getTemplate, listTemplates } from "@timothycrooker/ai-c
 import { Command } from "commander";
 import { resolveCliVersion } from "./version.js";
 import { registerSkillsCommand } from "./commands/skills/index.js";
+import { registerMigrateCommand } from "./commands/migrate/index.js";
 
 const program = new Command();
 
@@ -21,6 +22,7 @@ program
   .version(resolveCliVersion());
 
 registerSkillsCommand(program);
+registerMigrateCommand(program);
 
 program
   .command("init")
