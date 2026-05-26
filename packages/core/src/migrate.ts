@@ -324,6 +324,27 @@ export function executeMoveDir(cwd: string, entry: MigrateEntry): void {
   gitCommit(cwd, `chore(migrate): move_dir ${entry.name}\n\n${entry.rationale}`);
 }
 
+export function executeConsolidateSymlink(cwd: string, entry: MigrateEntry): void {
+  // 1. Move the real source from .agents/skills/<name> to .ai/skills/<name>
+  const underlyingSource = entry.current_state.underlying_source!;
+  gitMv(cwd, underlyingSource, entry.target.source);
+
+  // 2. Remove the .claude/skills/<name> symlink (it's now pointing at a non-existent path)
+  const claudeLinkPath = entry.current_state.path;
+  const claudeLinkAbs = path.join(cwd, claudeLinkPath);
+  if (isSymlink(claudeLinkAbs)) {
+    fs.unlinkSync(claudeLinkAbs);
+    execSync(`git add -A`, { cwd }); // capture the deletion
+  }
+
+  // 3. Re-create both mirror symlinks pointing at the new .ai/skills/<name> source
+  for (const mirrorRel of entry.target.mirrors) {
+    createMirrorLink(cwd, mirrorRel, entry.target.source);
+  }
+
+  gitCommit(cwd, `chore(migrate): consolidate_symlink ${entry.name}\n\n${entry.rationale}`);
+}
+
 export function executePromoteBareMd(cwd: string, entry: MigrateEntry): void {
   const sourcePath = entry.current_state.path;
   const targetSkillMd = path.join(entry.target.source, "SKILL.md");
