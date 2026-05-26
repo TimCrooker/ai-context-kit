@@ -223,10 +223,16 @@ fi
 
 # ---------------------------------------------------------------------------
 # Stage 11: Cross-CLI discovery of Claude-authored skill
-# Must run while gauntlet-auth-claude is still in place from Stage 8a
+# Must run while gauntlet-auth-claude is still in place from Stage 8a.
+# If Stage 8a was skipped (no claude) or failed to author the skill, skip
+# stage 11 entirely — otherwise it falsely reports FAIL on a missing skill.
 # ---------------------------------------------------------------------------
-echo "[gauntlet] Stage 11: cross-CLI discovery of Claude-authored skill..."
 CROSS_SKILL="gauntlet-auth-claude"
+if [ ! -d "$FIXTURE/.ai/skills/$CROSS_SKILL" ]; then
+  log_stage "Stage 11 cross-CLI codex" "SKIP" "Stage 8a Claude-authored skill not present"
+  log_stage "Stage 11 cross-CLI gemini" "SKIP" "Stage 8a Claude-authored skill not present"
+else
+echo "[gauntlet] Stage 11: cross-CLI discovery of Claude-authored skill..."
 for cross_cli in codex gemini; do
   CROSS_SKIP_VAR="SKIP_$(echo "$cross_cli" | tr '[:lower:]' '[:upper:]')"
   CROSS_SKIP="${!CROSS_SKIP_VAR}"
@@ -247,6 +253,7 @@ for cross_cli in codex gemini; do
     log_stage "Stage 11 cross-CLI $cross_cli" "SKIP" "$cross_cli not on PATH or --skip-$cross_cli"
   fi
 done
+fi
 
 # Now clean up gauntlet-auth-claude
 rm -rf "$FIXTURE/.ai/skills/$CROSS_SKILL"
