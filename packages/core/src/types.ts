@@ -144,3 +144,64 @@ export interface SkillMirrorState {
   target?: string;
   expectedTarget?: string;
 }
+
+// Migrate subsystem types
+export type MigrateActionType =
+  | "move_dir"
+  | "promote_bare_md"
+  | "consolidate_symlink"
+  | "keep_existing"
+  | "REVIEW";
+
+export type MigrateCurrentStateType =
+  | "directory_with_skill_md"
+  | "bare_md"
+  | "existing_symlink"
+  | "already_kit_managed"
+  | "non_skill_file";
+
+export interface MigrateCurrentState {
+  type: MigrateCurrentStateType;
+  path: string;
+  files?: string[];
+  current_target?: string;
+  underlying_source?: string;
+}
+
+export interface MigrateTarget {
+  source: string;
+  mirrors: string[];
+}
+
+export interface MigrateEntry {
+  name: string;
+  current_state: MigrateCurrentState;
+  action: MigrateActionType;
+  target: MigrateTarget;
+  rationale: string;
+  applied_at: string | null;
+}
+
+export interface MigrateReviewCandidate {
+  name: string;
+  reason: string;
+  paths: string[];
+}
+
+export interface MigratePlan {
+  version: 1;
+  generated_at: string;
+  generator: {
+    kit_version: string;
+    cwd: string;
+  };
+  summary: {
+    total_entries_found: number;
+    actions: Record<MigrateActionType, number>;
+    review_candidates: number;
+    applied: boolean;
+  };
+  entries: MigrateEntry[];
+  review_candidates: MigrateReviewCandidate[];
+  warnings?: string[];
+}
