@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -246,6 +247,44 @@ export function readPlan(cwd: string): MigratePlan {
     throw new ContextError(
       "AICTX_MIGRATE_PLAN_INVALID",
       `Migration plan at ${MIGRATE_PLAN_REL_PATH} is not valid JSON: ${(error as Error).message}`
+    );
+  }
+}
+
+export function checkApplyPreconditions(cwd: string): void {
+  // 1. Git repo check
+  try {
+    execSync("git rev-parse --git-dir", { cwd, stdio: "pipe" });
+  } catch {
+    throw new ContextError(
+      "AICTX_MIGRATE_NOT_GIT_REPO",
+      `${cwd} is not a git repository. Migrate requires git for safe history-preserving moves.`
+    );
+  }
+
+  // 2. Clean tree
+  const status = execSync("git status --porcelain", { cwd }).toString().trim();
+  if (status.length > 0) {
+    throw new ContextError(
+      "AICTX_MIGRATE_DIRTY_TREE",
+      `Git working tree is not clean. Commit or stash changes before running migrate apply.\n${status}`
+    );
+  }
+
+  // 3. Manifest has skills block
+  try {
+    const manifest = loadManifest(cwd);
+    if (!manifest.skills) {
+      throw new ContextError(
+        "AICTX_MIGRATE_NO_SKILLS_BLOCK",
+        `Manifest at .ai/context/manifest.json has no 'skills' block. Run 'ai-context init --upgrade' first.`
+      );
+    }
+  } catch (error) {
+    if (error instanceof ContextError) throw error;
+    throw new ContextError(
+      "AICTX_MIGRATE_NO_SKILLS_BLOCK",
+      `Could not validate manifest: ${(error as Error).message}`
     );
   }
 }
