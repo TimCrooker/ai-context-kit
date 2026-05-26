@@ -323,3 +323,31 @@ export function executeMoveDir(cwd: string, entry: MigrateEntry): void {
   }
   gitCommit(cwd, `chore(migrate): move_dir ${entry.name}\n\n${entry.rationale}`);
 }
+
+export function executePromoteBareMd(cwd: string, entry: MigrateEntry): void {
+  const sourcePath = entry.current_state.path;
+  const targetSkillMd = path.join(entry.target.source, "SKILL.md");
+
+  const origContent = fs.readFileSync(path.join(cwd, sourcePath), "utf8");
+  ensureDir(cwd, entry.target.source);
+
+  const hasFrontmatter = /^---\n[\s\S]*?\n---\n/.test(origContent);
+  let newContent: string;
+  if (hasFrontmatter) {
+    newContent = origContent;
+  } else {
+    const description = `Migrated from legacy slash-command at ${sourcePath}.`;
+    newContent = `---\nname: ${entry.name}\ndescription: ${description}\n---\n\n${origContent.trimStart()}`;
+  }
+
+  fs.writeFileSync(path.join(cwd, targetSkillMd), newContent, "utf8");
+  fs.unlinkSync(path.join(cwd, sourcePath));
+
+  execSync(`git add -A`, { cwd });
+
+  for (const mirrorRel of entry.target.mirrors) {
+    createMirrorLink(cwd, mirrorRel, entry.target.source);
+  }
+
+  gitCommit(cwd, `chore(migrate): promote_bare_md ${entry.name}\n\n${entry.rationale}`);
+}
