@@ -139,9 +139,9 @@ ai-context skills list --json
 
 | Flag | Behavior |
 |---|---|
-| `--json` | Emit newline-delimited JSON for machine consumption |
+| `--json` | Emit a single JSON object `{skills:[...]}` for machine consumption |
 
-Each row shows skill name, description excerpt, scope, and the status of each mirror path (`symlink`, `copy`, `missing`, or `conflict`).
+Each row shows skill name, description, scope, and the status of each mirror path (`symlink`, `copy`, `missing`, or `conflict`).
 
 ---
 

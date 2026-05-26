@@ -137,9 +137,20 @@ function buildInternal(cwd: string, options: BuildOptions): BuildResult {
     } else {
       // dryRun / check: predict what would change without touching disk
       for (const plan of plans) {
+        const rel = path.relative(cwd, plan.mirror);
         if (!fs.existsSync(plan.mirror)) {
-          result.written.push(path.relative(cwd, plan.mirror));
+          result.written.push(rel);
           result.upToDate = false;
+          continue;
+        }
+        // Mirror exists; check that it's a symlink to the right target
+        if (isSymlink(plan.mirror)) {
+          const actual = readSymlink(plan.mirror);
+          const expected = computeSymlinkTarget(plan.mirror, plan.source);
+          if (actual !== expected) {
+            result.written.push(rel);
+            result.upToDate = false;
+          }
         }
       }
       if (options.removeOrphans) {

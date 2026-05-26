@@ -7,7 +7,8 @@ import { parseFrontMatter } from "./front-matter.js";
 import { toPosix } from "./path-utils.js";
 import type { SkillFrontmatter, SkillSource, Manifest, SkillMirrorPlan } from "./types.js";
 
-const SKILL_NAME_PATTERN = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
+// Lowercase alphanumerics + single hyphens; no leading/trailing hyphen, no consecutive hyphens.
+const SKILL_NAME_PATTERN = /^[a-z0-9](?:-?[a-z0-9]+)*$/;
 const MAX_NAME_LENGTH = 64;
 const MAX_DESCRIPTION_LENGTH = 1024;
 
@@ -186,6 +187,12 @@ export function planSkillMirrors(
 
     for (const scopeId of scopeIds) {
       if (scopeId === "*") continue;
+      if (scopeId === "root") {
+        throw new ContextError(
+          "AICTX_SKILL_SCOPE_UNKNOWN",
+          `Skill '${skill.name}' uses 'root' in scope; the implicit root emission is already enabled by omitting scope. Either remove 'root' or use scope: ["*"] for root + all scopes.`
+        );
+      }
       if (!targetIds.includes(scopeId)) {
         throw new ContextError(
           "AICTX_SKILL_SCOPE_UNKNOWN",

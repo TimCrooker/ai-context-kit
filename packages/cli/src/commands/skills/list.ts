@@ -4,23 +4,18 @@ import fs from "node:fs";
 import {
   discoverSkills,
   formatContextError,
+  loadManifest,
   planSkillMirrors,
-  type Manifest,
 } from "@timothycrooker/ai-context-core";
 
 interface ListOptions {
   json?: boolean;
 }
 
-function loadManifestForCli(cwd: string): Manifest {
-  const manifestPath = path.join(cwd, ".ai/context/manifest.json");
-  return JSON.parse(fs.readFileSync(manifestPath, "utf8")) as Manifest;
-}
-
 export function runSkillsList(opts: ListOptions): void {
   try {
     const cwd = process.cwd();
-    const manifest = loadManifestForCli(cwd);
+    const manifest = loadManifest(cwd);
     if (!manifest.skills) {
       if (opts.json) {
         console.log(JSON.stringify({ skills: [] }, null, 2));
@@ -36,16 +31,17 @@ export function runSkillsList(opts: ListOptions): void {
     const skillRows = skills.map((s) => {
       const skillPlans = plans.filter((p) => p.source === s.dir);
       const mirrorStatus = skillPlans.map((p) => {
-        const exists = fs.existsSync(p.mirror);
-        if (!exists) return { path: path.relative(cwd, p.mirror), state: "missing" };
+        const rel = path.relative(cwd, p.mirror);
+        if (!fs.existsSync(p.mirror)) return { path: rel, state: "missing" as const };
         try {
           const stat = fs.lstatSync(p.mirror);
           return {
-            path: path.relative(cwd, p.mirror),
-            state: stat.isSymbolicLink() ? "symlink" : "copy",
+            path: rel,
+            state: stat.isSymbolicLink() ? ("symlink" as const) : ("copy" as const),
           };
         } catch {
-          return { path: path.relative(cwd, p.mirror), state: "unknown" };
+          // Could not read the entry; surface as conflict so docs match impl.
+          return { path: rel, state: "conflict" as const };
         }
       });
       return {

@@ -82,7 +82,7 @@ The optional `skills` block in `manifest.json` enables the skills subsystem:
 
 - `skills.source` (string, required) — directory containing skill source trees (one subdirectory per skill). Default convention: `.ai/skills`.
 - `skills.mirrors` (string[], required, non-empty) — where mirror symlinks are created. Default convention: `[".agents/skills", ".claude/skills"]`. Add `.cursor/skills` etc. to support additional CLIs.
-- `skills.metaSkill` (boolean, optional, default `true`) — when `true`, `ai-context init` and `init --upgrade` seed the kit's own `.ai/skills/ai-context-kit/` meta-skill. Set to `false` to opt out.
+- `skills.metaSkill` (boolean, optional, default `true`) — reserved for future opt-out of meta-skill seeding. **Currently the meta-skill ships unconditionally via the templates package** regardless of this flag; setting `false` is recorded in the manifest but has no behavioral effect in 1.0. Planned in a future release: filter `.ai/skills/ai-context-kit/` files from `initProject` when this is `false`. If you want to remove the meta-skill today, delete `.ai/skills/ai-context-kit/` after running `init` and re-run `build --remove-orphans`.
 
 ### Backward compatibility
 

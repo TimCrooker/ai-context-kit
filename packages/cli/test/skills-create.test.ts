@@ -39,7 +39,7 @@ describe("ai-context skills create", () => {
       "utf8"
     );
     expect(skillMd).toContain("name: my-skill");
-    expect(skillMd).toContain("description: Does a thing");
+    expect(skillMd).toContain('description: "Does a thing"');
   });
 
   it("creates symlinks at both mirror paths", () => {

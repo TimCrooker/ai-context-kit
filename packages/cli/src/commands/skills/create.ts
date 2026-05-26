@@ -43,13 +43,22 @@ export function runSkillsCreate(name: string, opts: CreateOptions): void {
 
     fs.mkdirSync(sourceDir, { recursive: true });
 
+    // Quote scope entries to handle reserved YAML chars (e.g., `*` is an anchor).
     const scopeYaml =
-      opts.scope.length === 0 ? "" : `scope: [${opts.scope.join(", ")}]\n`;
-    const description = opts.description.length > 0 ? opts.description : `Describe ${name}`;
+      opts.scope.length === 0
+        ? ""
+        : `scope: [${opts.scope.map((s) => `"${s.replace(/"/g, '\\"')}"`).join(", ")}]\n`;
+    const rawDescription =
+      opts.description.length > 0 ? opts.description : `Describe ${name}`;
+    // Quote description as a YAML double-quoted string so colons, newlines, brackets are safe.
+    const descriptionEscaped = rawDescription
+      .replace(/\\/g, "\\\\")
+      .replace(/"/g, '\\"')
+      .replace(/\n/g, "\\n");
 
     const skillMd = `---
 name: ${name}
-description: ${description}
+description: "${descriptionEscaped}"
 ${scopeYaml}---
 
 # ${name}

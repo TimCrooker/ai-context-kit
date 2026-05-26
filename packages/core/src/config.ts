@@ -97,7 +97,13 @@ export function loadManifest(cwd: string, manifestPath?: string): Manifest {
         );
       }
     }
-    const metaSkill = block.metaSkill === undefined ? true : Boolean(block.metaSkill);
+    if (block.metaSkill !== undefined && typeof block.metaSkill !== "boolean") {
+      throw new ContextError(
+        "AICTX_CONFIG_INVALID",
+        `manifest.skills.metaSkill must be a boolean when present (got ${typeof block.metaSkill}: ${JSON.stringify(block.metaSkill)}) (${resolved})`
+      );
+    }
+    const metaSkill = block.metaSkill === undefined ? true : block.metaSkill;
     skills = {
       source: block.source,
       mirrors: block.mirrors as string[],
