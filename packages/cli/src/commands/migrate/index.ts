@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { runMigratePlan } from "./plan.js";
+import { runMigrateStatus } from "./status.js";
 
 export function registerMigrateCommand(program: Command): void {
   const migrate = program.command("migrate").description("Migrate a legacy skill layout to ai-context-kit");
@@ -10,9 +11,10 @@ export function registerMigrateCommand(program: Command): void {
     .option("--force", "overwrite an existing migration plan", false)
     .action((opts: { force: boolean }) => runMigratePlan({ force: Boolean(opts.force) }));
 
-  migrate.command("status").description("Show migration plan status").action(() => {
-    console.log("(migrate status - implemented in Task 14)");
-  });
+  migrate
+    .command("status")
+    .description("Show migration plan status")
+    .action(() => runMigrateStatus());
   migrate.command("apply").description("Apply the migration plan").action(() => {
     console.log("(migrate apply - implemented in Task 15)");
   });
