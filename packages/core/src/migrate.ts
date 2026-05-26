@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { isSymlink, readSymlink } from "./io.js";
-import type { MigrateCurrentState } from "./types.js";
+import type { MigrateCurrentState, MigrateEntry, SkillsManifestBlock } from "./types.js";
 
 export function classifyEntry(
   cwd: string,
@@ -56,4 +56,61 @@ export function classifyEntry(
     path: entryRelPath,
     files,
   };
+}
+
+export function computeAction(
+  name: string,
+  state: MigrateCurrentState,
+  skillsConfig: SkillsManifestBlock
+): Omit<MigrateEntry, "current_state" | "applied_at"> {
+  const target = {
+    source: `${skillsConfig.source}/${name}`,
+    mirrors: skillsConfig.mirrors.map((m) => `${m}/${name}`),
+  };
+
+  switch (state.type) {
+    case "directory_with_skill_md":
+      return {
+        name,
+        action: "move_dir",
+        target,
+        rationale:
+          "Standard directory skill with SKILL.md; move source to .ai/skills/ and create both mirror symlinks.",
+      };
+
+    case "bare_md":
+      return {
+        name,
+        action: "promote_bare_md",
+        target,
+        rationale:
+          "Legacy slash-command form; promote to skill directory with SKILL.md. Content preserved verbatim.",
+      };
+
+    case "existing_symlink":
+      return {
+        name,
+        action: "consolidate_symlink",
+        target,
+        rationale:
+          "Existing hand-symlink with source outside .ai/skills/. Move source to .ai/skills/, repoint both mirrors. Preserves edit history.",
+      };
+
+    case "already_kit_managed":
+      return {
+        name,
+        action: "keep_existing",
+        target,
+        rationale: "Already managed by ai-context-kit; no migration needed.",
+      };
+
+    case "non_skill_file":
+      return {
+        name,
+        action: "keep_existing",
+        target,
+        rationale:
+          "Non-skill content (README, stray file, or directory without SKILL.md); preserved as-is.",
+      };
+  }
 }
