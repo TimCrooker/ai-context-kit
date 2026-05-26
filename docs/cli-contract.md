@@ -97,3 +97,37 @@
 - Purpose: used together with `--upgrade`; forces overwrite of files under `.ai/skills/ai-context-kit/` even if they already exist.
 - Refreshes the meta-skill content from the latest `@timothycrooker/ai-context-templates` package.
 - All other existing files are still preserved (only the meta-skill directory is overwritten).
+
+### `ai-context migrate plan [--force]`
+
+- Purpose: scan `.claude/skills/` and generate a migration plan at `.ai/migration-plan.json`.
+- Flags:
+  - `--force`: overwrite an existing plan file.
+- Exit codes: `0` on success, `1` on precondition failure (manifest unreadable, etc.).
+- Success output: summary of entries found and actions by type, plus next-steps instructions.
+- The plan file is NOT committed automatically — you review and commit it if desired.
+
+### `ai-context migrate status`
+
+- Purpose: report the state of the current migration plan.
+- Exit codes: `0` always (no plan is not an error, just informational).
+- When no plan exists: prints "No migration plan present at .ai/migration-plan.json".
+- When plan exists: prints generated date, entry count, applied/total progress, and action breakdown.
+
+### `ai-context migrate apply [--dry-run]`
+
+- Purpose: execute the migration plan, one git commit per entry.
+- Flags:
+  - `--dry-run`: print what would happen without modifying files or making commits.
+- Preconditions (all must be met, else exit 1):
+  - Must be a git repository.
+  - Working tree must be clean (except for the plan file itself).
+  - Manifest must have a `skills` block.
+- Exit codes: `0` on success, `1` on precondition failure, `2` on partial apply failure.
+- Each entry creates one git commit with message `chore(migrate): <action> <name>`.
+
+### `ai-context migrate clean`
+
+- Purpose: remove an applied migration plan file.
+- Refuses to remove a plan that has not been applied (to prevent data loss).
+- Exit codes: `0` on success or when no file present, `1` when plan is unapplied.

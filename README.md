@@ -103,6 +103,17 @@ Set up the trusted publisher in npm for `TimCrooker/ai-context-kit` before runni
 
 ai-context-kit supports cross-CLI skills via the [agentskills.io](https://agentskills.io) open standard. Author once at `.ai/skills/<name>/SKILL.md`; the kit creates symlinks at `.agents/skills/<name>` (read by Codex, Gemini, Cursor, Goose, OpenCode, Aider, and 17+ other tools) and `.claude/skills/<name>` (read by Claude Code). See [docs/skills-guide.md](docs/skills-guide.md).
 
+## Migration (1.1+)
+
+Existing repos with legacy `.claude/skills/` layouts can migrate to ai-context-kit's `.ai/skills/` source-of-truth via:
+
+```bash
+ai-context migrate plan       # audit current layout
+ai-context migrate apply      # execute (requires clean git tree)
+```
+
+See [docs/migrating-existing-repos.md](docs/migrating-existing-repos.md) for the full workflow including agent-driven curation.
+
 ## License
 
 MIT
