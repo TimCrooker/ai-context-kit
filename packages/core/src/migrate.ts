@@ -1,7 +1,31 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { loadManifest } from "./config.js";
 import { isSymlink, readSymlink } from "./io.js";
-import type { MigrateCurrentState, MigrateEntry, SkillsManifestBlock } from "./types.js";
+import type {
+  MigrateActionType,
+  MigrateCurrentState,
+  MigrateEntry,
+  MigratePlan,
+  SkillsManifestBlock,
+} from "./types.js";
+
+const DEFAULT_SKILLS_CONFIG: SkillsManifestBlock = {
+  source: ".ai/skills",
+  mirrors: [".agents/skills", ".claude/skills"],
+  metaSkill: true,
+};
+
+function readKitVersion(): string {
+  try {
+    const pkgUrl = new URL("../package.json", import.meta.url);
+    const pkg = JSON.parse(fs.readFileSync(fileURLToPath(pkgUrl), "utf8"));
+    return pkg.version ?? "unknown";
+  } catch {
+    return "unknown";
+  }
+}
 
 export function classifyEntry(
   cwd: string,
@@ -113,4 +137,77 @@ export function computeAction(
           "Non-skill content (README, stray file, or directory without SKILL.md); preserved as-is.",
       };
   }
+}
+
+export function generateMigrationPlan(cwd: string): MigratePlan {
+  const warnings: string[] = [];
+
+  let skillsConfig: SkillsManifestBlock;
+  try {
+    const manifest = loadManifest(cwd);
+    if (!manifest.skills) {
+      warnings.push(
+        "Manifest does not have a 'skills' block. Run `ai-context init --upgrade` to enable the skills subsystem before applying this plan."
+      );
+      skillsConfig = DEFAULT_SKILLS_CONFIG;
+    } else {
+      skillsConfig = manifest.skills;
+    }
+  } catch {
+    warnings.push(
+      "Could not load manifest. Plan uses default skills config (.ai/skills source, .agents+.claude mirrors)."
+    );
+    skillsConfig = DEFAULT_SKILLS_CONFIG;
+  }
+
+  const claudeSkillsDir = path.join(cwd, ".claude/skills");
+  const entries: MigrateEntry[] = [];
+
+  if (fs.existsSync(claudeSkillsDir)) {
+    const dirents = fs.readdirSync(claudeSkillsDir, { withFileTypes: true });
+    for (const dirent of dirents) {
+      if (dirent.name.startsWith(".")) continue;
+      const entryRelPath = path
+        .relative(cwd, path.join(claudeSkillsDir, dirent.name))
+        .split(path.sep)
+        .join("/");
+      const name = dirent.name.endsWith(".md") ? dirent.name.slice(0, -3) : dirent.name;
+      const state = classifyEntry(cwd, entryRelPath, name);
+      const actionPart = computeAction(name, state, skillsConfig);
+      entries.push({
+        ...actionPart,
+        current_state: state,
+        applied_at: null,
+      });
+    }
+  }
+
+  entries.sort((a, b) => a.name.localeCompare(b.name));
+
+  const actions: Record<MigrateActionType, number> = {
+    move_dir: 0,
+    promote_bare_md: 0,
+    consolidate_symlink: 0,
+    keep_existing: 0,
+    REVIEW: 0,
+  };
+  for (const e of entries) {
+    actions[e.action] = (actions[e.action] ?? 0) + 1;
+  }
+
+  const plan: MigratePlan = {
+    version: 1,
+    generated_at: new Date().toISOString(),
+    generator: { kit_version: readKitVersion(), cwd },
+    summary: {
+      total_entries_found: entries.length,
+      actions,
+      review_candidates: 0,
+      applied: false,
+    },
+    entries,
+    review_candidates: [],
+  };
+  if (warnings.length > 0) plan.warnings = warnings;
+  return plan;
 }
