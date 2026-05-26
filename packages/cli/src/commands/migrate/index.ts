@@ -1,4 +1,5 @@
 import { Command } from "commander";
+import { runMigrateApply } from "./apply.js";
 import { runMigratePlan } from "./plan.js";
 import { runMigrateStatus } from "./status.js";
 
@@ -15,9 +16,11 @@ export function registerMigrateCommand(program: Command): void {
     .command("status")
     .description("Show migration plan status")
     .action(() => runMigrateStatus());
-  migrate.command("apply").description("Apply the migration plan").action(() => {
-    console.log("(migrate apply - implemented in Task 15)");
-  });
+  migrate
+    .command("apply")
+    .description("Execute the migration plan")
+    .option("--dry-run", "simulate without making changes", false)
+    .action((opts: { dryRun: boolean }) => runMigrateApply({ dryRun: Boolean(opts.dryRun) }));
   migrate.command("clean").description("Remove the applied migration plan").action(() => {
     console.log("(migrate clean - implemented in Task 16)");
   });
