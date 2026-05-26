@@ -27,5 +27,22 @@ describe("templates bundle meta-skill", () => {
 			)
 			expect(manifest!.content).toContain('"skills"')
 		})
+
+		it(`${name} template includes the ai-context-migrate skill SKILL.md`, () => {
+			const template = getTemplate(name)
+			const skillMd = template.files.find(
+				(f) => f.path === ".ai/skills/ai-context-migrate/SKILL.md"
+			)
+			expect(skillMd).toBeDefined()
+			expect(skillMd!.content).toContain("name: ai-context-migrate")
+		})
+
+		it(`${name} template includes migration reference docs`, () => {
+			const template = getTemplate(name)
+			const refs = template.files.filter((f) =>
+				f.path.startsWith(".ai/skills/ai-context-migrate/references/")
+			)
+			expect(refs.length).toBeGreaterThanOrEqual(4)
+		})
 	}
 })
