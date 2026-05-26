@@ -4,7 +4,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadManifest } from "./config.js";
 import { ContextError } from "./errors.js";
-import { isSymlink, readSymlink } from "./io.js";
+import { createSymlink, isSymlink, readSymlink } from "./io.js";
+import { computeSymlinkTarget } from "./skills.js";
 import type {
   MigrateActionType,
   MigrateCurrentState,
@@ -287,4 +288,38 @@ export function checkApplyPreconditions(cwd: string): void {
       `Could not validate manifest: ${(error as Error).message}`
     );
   }
+}
+
+function ensureDir(cwd: string, relPath: string): void {
+  fs.mkdirSync(path.join(cwd, relPath), { recursive: true });
+}
+
+function gitMv(cwd: string, fromRel: string, toRel: string): void {
+  ensureDir(cwd, path.dirname(toRel));
+  execSync(`git mv ${JSON.stringify(fromRel)} ${JSON.stringify(toRel)}`, { cwd });
+}
+
+function gitCommit(cwd: string, message: string): void {
+  execSync(`git commit -q -m ${JSON.stringify(message)}`, { cwd });
+}
+
+function gitAddPath(cwd: string, relPath: string): void {
+  execSync(`git add ${JSON.stringify(relPath)}`, { cwd });
+}
+
+function createMirrorLink(cwd: string, mirrorRel: string, sourceRel: string): void {
+  const sourceAbs = path.join(cwd, sourceRel);
+  const mirrorAbs = path.join(cwd, mirrorRel);
+  const target = computeSymlinkTarget(mirrorAbs, sourceAbs);
+  ensureDir(cwd, path.dirname(mirrorRel));
+  createSymlink(target, mirrorAbs);
+  gitAddPath(cwd, mirrorRel);
+}
+
+export function executeMoveDir(cwd: string, entry: MigrateEntry): void {
+  gitMv(cwd, entry.current_state.path, entry.target.source);
+  for (const mirrorRel of entry.target.mirrors) {
+    createMirrorLink(cwd, mirrorRel, entry.target.source);
+  }
+  gitCommit(cwd, `chore(migrate): move_dir ${entry.name}\n\n${entry.rationale}`);
 }
