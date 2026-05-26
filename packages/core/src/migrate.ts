@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadManifest } from "./config.js";
+import { ContextError } from "./errors.js";
 import { isSymlink, readSymlink } from "./io.js";
 import type {
   MigrateActionType,
@@ -210,4 +211,41 @@ export function generateMigrationPlan(cwd: string): MigratePlan {
   };
   if (warnings.length > 0) plan.warnings = warnings;
   return plan;
+}
+
+export const MIGRATE_PLAN_REL_PATH = ".ai/migration-plan.json";
+
+export function writePlan(
+  cwd: string,
+  plan: MigratePlan,
+  options: { force?: boolean } = {}
+): void {
+  const planPath = path.join(cwd, MIGRATE_PLAN_REL_PATH);
+  if (fs.existsSync(planPath) && !options.force) {
+    throw new ContextError(
+      "AICTX_MIGRATE_PLAN_EXISTS",
+      `Migration plan already exists at ${MIGRATE_PLAN_REL_PATH}. Use --force to overwrite.`
+    );
+  }
+  fs.mkdirSync(path.dirname(planPath), { recursive: true });
+  fs.writeFileSync(planPath, JSON.stringify(plan, null, 2) + "\n", "utf8");
+}
+
+export function readPlan(cwd: string): MigratePlan {
+  const planPath = path.join(cwd, MIGRATE_PLAN_REL_PATH);
+  if (!fs.existsSync(planPath)) {
+    throw new ContextError(
+      "AICTX_MIGRATE_PLAN_NOT_FOUND",
+      `Migration plan not found at ${MIGRATE_PLAN_REL_PATH}. Run 'ai-context migrate plan' first.`
+    );
+  }
+  const raw = fs.readFileSync(planPath, "utf8");
+  try {
+    return JSON.parse(raw) as MigratePlan;
+  } catch (error) {
+    throw new ContextError(
+      "AICTX_MIGRATE_PLAN_INVALID",
+      `Migration plan at ${MIGRATE_PLAN_REL_PATH} is not valid JSON: ${(error as Error).message}`
+    );
+  }
 }
