@@ -71,18 +71,33 @@ describe("migrate plan serialization", () => {
   });
 
   it("readPlan throws AICTX_MIGRATE_PLAN_NOT_FOUND when file is missing", () => {
-    expect(() => readPlan(tmp)).toThrow(/AICTX_MIGRATE_PLAN_NOT_FOUND/);
+    try {
+      readPlan(tmp);
+      throw new Error("expected throw");
+    } catch (e: any) {
+      expect(e.code).toBe("AICTX_MIGRATE_PLAN_NOT_FOUND");
+    }
   });
 
   it("readPlan throws AICTX_MIGRATE_PLAN_INVALID when JSON is malformed", () => {
     fs.mkdirSync(path.join(tmp, ".ai"), { recursive: true });
     fs.writeFileSync(path.join(tmp, ".ai/migration-plan.json"), "{ not valid json");
-    expect(() => readPlan(tmp)).toThrow(/AICTX_MIGRATE_PLAN_INVALID/);
+    try {
+      readPlan(tmp);
+      throw new Error("expected throw");
+    } catch (e: any) {
+      expect(e.code).toBe("AICTX_MIGRATE_PLAN_INVALID");
+    }
   });
 
   it("writePlan refuses to overwrite without force option", () => {
     writePlan(tmp, SAMPLE_PLAN);
-    expect(() => writePlan(tmp, SAMPLE_PLAN)).toThrow(/AICTX_MIGRATE_PLAN_EXISTS/);
+    try {
+      writePlan(tmp, SAMPLE_PLAN);
+      throw new Error("expected throw");
+    } catch (e: any) {
+      expect(e.code).toBe("AICTX_MIGRATE_PLAN_EXISTS");
+    }
   });
 
   it("writePlan with force=true overwrites existing plan", () => {
