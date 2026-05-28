@@ -35,3 +35,19 @@ export {
   createMirrorCopy,
   computeSymlinkTarget,
 } from "./skills.js";
+
+export {
+  classifyEntry,
+  computeAction,
+  generateMigrationPlan,
+  writePlan,
+  readPlan,
+  checkApplyPreconditions,
+  executeMoveDir,
+  executePromoteBareMd,
+  executeConsolidateSymlink,
+  applyPlan,
+  MIGRATE_PLAN_REL_PATH,
+} from "./migrate.js";
+
+export type { ApplyPlanOptions, ApplyPlanReport } from "./migrate.js";

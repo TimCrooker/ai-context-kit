@@ -32,6 +32,25 @@
 - `AICTX_SKILL_MIRROR_BROKEN`
   - A mirror symlink points at a missing target (the source skill was deleted). Run `ai-context build --remove-orphans`.
 
+### Migrate subsystem (`AICTX_MIGRATE_*`)
+
+- `AICTX_MIGRATE_PLAN_EXISTS`
+  - A migration plan already exists at `.ai/migration-plan.json`. Use `--force` to overwrite, or `ai-context migrate clean` if the previous plan was applied.
+- `AICTX_MIGRATE_PLAN_NOT_FOUND`
+  - No migration plan found. Run `ai-context migrate plan` first.
+- `AICTX_MIGRATE_PLAN_INVALID`
+  - The migration plan file at `.ai/migration-plan.json` is not valid JSON. Delete it and regenerate with `ai-context migrate plan`.
+- `AICTX_MIGRATE_NO_SKILLS_BLOCK`
+  - The manifest does not have a `skills` block. Run `ai-context init --upgrade` to add one before applying a migration plan.
+- `AICTX_MIGRATE_DIRTY_TREE`
+  - The git working tree has uncommitted changes. Commit or stash all changes before running `ai-context migrate apply`.
+- `AICTX_MIGRATE_NOT_GIT_REPO`
+  - The current directory is not a git repository. Migration requires git for history-preserving file moves.
+- `AICTX_MIGRATE_ENTRY_FAILED`
+  - A migration entry failed to apply. The migration is halted at that entry. Fix the issue and re-run `ai-context migrate apply` (it will skip already-applied entries).
+- `AICTX_MIGRATE_ALREADY_APPLIED`
+  - Raised by `ai-context migrate clean` when the plan has not been applied yet. Apply the plan first, or delete the plan file manually.
+
 ## CLI Formatting
 
 When a `ContextError` reaches CLI handlers, it is rendered as:
