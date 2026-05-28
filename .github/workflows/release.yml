@@ -26,8 +26,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
-      - run: pnpm test
       - run: pnpm build
+      - run: pnpm test
       - run: pnpm preflight:release
       - name: Create Release PR or Publish
         uses: changesets/action@v1
