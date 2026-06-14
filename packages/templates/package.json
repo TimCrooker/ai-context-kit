@@ -1,6 +1,6 @@
 {
   "name": "@timothycrooker/ai-context-templates",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Project templates for ai-context-kit",
   "license": "MIT",
   "type": "module",
@@ -23,7 +23,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@timothycrooker/ai-context-core": "^1.1.0"
+    "@timothycrooker/ai-context-core": "^1.2.0"
   },
   "repository": {
     "type": "git",

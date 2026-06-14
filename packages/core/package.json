@@ -1,6 +1,6 @@
 {
   "name": "@timothycrooker/ai-context-core",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Core engine for generating Codex and Claude context files",
   "license": "MIT",
   "type": "module",
