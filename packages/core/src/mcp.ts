@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { ContextError } from "./errors.js";
+import { getAdapter, MANAGED_MARKER } from "./mcp-adapters/index.js";
+import type { GeneratedOutput } from "./render.js";
 import type { McpRegistry, McpServer, McpClientId, Manifest } from "./types.js";
 
 const NAME_PATTERN = /^[a-z0-9](?:-?[a-z0-9]+)*$/;
@@ -112,4 +114,80 @@ export function loadMcpRegistry(cwd: string, manifest: Manifest): McpRegistry | 
     return { version: 1, servers: [] };
   }
   return parseMcpRegistry(fs.readFileSync(abs, "utf8"), manifest.mcp.registry);
+}
+
+/**
+ * Render the registry into per-client content outputs (same shape as the context
+ * generator, so they flow through the existing writeOutputs path). Only
+ * project-scope servers are emitted into repo files; user-scope servers are
+ * installed per-machine via `ai-context mcp install --user`.
+ */
+export function planMcpOutputs(
+  cwd: string,
+  reg: McpRegistry,
+  clients: McpClientId[]
+): GeneratedOutput[] {
+  const outputs: GeneratedOutput[] = [];
+  for (const client of clients) {
+    const adapter = getAdapter(client);
+    const servers = reg.servers.filter(
+      (s) => s.scope === "project" && s.targets.includes(client)
+    );
+    // Always emit (even when empty) so removing the last server deterministically
+    // shrinks the managed file instead of leaving a stale one behind.
+    const outPath = resolveOutputPath(cwd, adapter.projectOutputPath());
+    outputs.push({ path: outPath, content: adapter.render(servers), source: `mcp:${client}` });
+  }
+  return outputs;
+}
+
+/**
+ * Guard against clobbering a hand-written .codex/config.toml (which may hold
+ * budget config like project_doc_max_bytes). If a foreign file exists there,
+ * redirect to .codex/mcp.toml for the user to `include`.
+ */
+function resolveOutputPath(cwd: string, outPath: string): string {
+  if (outPath !== ".codex/config.toml") return outPath;
+  const abs = path.join(cwd, outPath);
+  if (!fs.existsSync(abs)) return outPath;
+  const existing = fs.readFileSync(abs, "utf8");
+  return existing.includes(MANAGED_MARKER) ? outPath : ".codex/mcp.toml";
+}
+
+/**
+ * Resolve a server's backing skill: an explicit `skill` (validated to exist) or,
+ * by convention, a co-named skill. Returns undefined when there is no backing.
+ */
+export function resolveSkillLink(
+  s: McpServer,
+  skillExists: (name: string) => boolean
+): string | undefined {
+  if (s.skill) {
+    if (!skillExists(s.skill)) {
+      throw new ContextError(
+        "AICTX_MCP_SKILL_MISSING",
+        `MCP server '${s.name}' references missing skill '${s.skill}'`
+      );
+    }
+    return s.skill;
+  }
+  return skillExists(s.name) ? s.name : undefined;
+}
+
+/** Render the "Available MCP servers" catalog block for context:true servers. */
+export function renderMcpCatalog(
+  servers: McpServer[],
+  skillExists: (name: string) => boolean
+): string {
+  const listed = servers.filter((s) => s.context);
+  if (listed.length === 0) return "";
+  const lines = [...listed]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((s) => {
+      const skill = resolveSkillLink(s, skillExists);
+      const where = s.scope === "user" ? "user-scoped (run `/mcp` to authenticate)" : "project";
+      const how = skill ? ` — see the \`${skill}\` skill for usage` : "";
+      return `- **${s.name}** (${where})${how}`;
+    });
+  return `## Available MCP servers\n\n${lines.join("\n")}\n`;
 }
