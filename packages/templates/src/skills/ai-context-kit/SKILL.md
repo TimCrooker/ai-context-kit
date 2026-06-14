@@ -19,6 +19,7 @@ This repo's `AGENTS.md`, `CLAUDE.md`, `.claude/rules/*.md`, `.agents/skills/*`, 
 | Understand `.ai/context/manifest.json` | `references/manifest-schema.md` |
 | Look up an `ai-context` CLI command | `references/cli-commands.md` |
 | Pick what kind of content to put in a module vs a skill vs a rule | `references/content-guide.md` |
+| Register an MCP server (fans out to client configs) | `references/authoring-mcp.md` |
 
 ## Authoring workflow (read this first)
 
@@ -44,6 +45,19 @@ ai-context verify      # CI-friendly: fails if outputs are stale
 ai-context doctor      # diagnose config / mirror issues
 ```
 
+## MCP servers (1.2+)
+
+Register MCP servers once in `.ai/mcp.json`; `ai-context build` fans them out to each agent client's native config (Claude `.mcp.json`, Codex `.codex/config.toml`) and lists `context: true` servers in the AGENTS.md/CLAUDE.md catalog. See `references/authoring-mcp.md`.
+
+Principles:
+
+- **One registry, many clients.** Declare a server once; the build emits per-client config. Add a client by listing it in the server's `targets` and `manifest.mcp.clients`.
+- **Secrets are references, never literals.** Use `${VAR}` in `env`; values resolve from `.ai/secrets.local.env`. `ai-context verify` fails if a credential literal lands in a generated file.
+- **Declaration is shared; auth is per-user.** `project`-scope servers are committed; `user`-scope servers are installed per-machine via `ai-context mcp install <name> --user` and authenticated with `/mcp`.
+- **Back a server with knowledge, not just config.** Set `skill` (or co-name a `.ai/skills/<name>`) and `context: true` so agents know what the tool is for.
+
+Commands: `ai-context mcp list`, `ai-context mcp install <name> --user`, `ai-context mcp setup <name>`.
+
 ## Directory map
 
 | Path | What lives here | Who edits |
@@ -51,6 +65,8 @@ ai-context doctor      # diagnose config / mirror issues
 | `.ai/context/modules/*.md` | Module content (composed into AGENTS.md/CLAUDE.md per target) | You |
 | `.ai/context/scopes.json` | Scope definitions: which modules go to which targets | You |
 | `.ai/context/manifest.json` | Top-level kit configuration | You |
+| `.ai/mcp.json` | MCP server registry (fans out to client configs) | You |
+| `.mcp.json`, `.codex/config.toml` | Per-client MCP config | Kit (generated) |
 | `.ai/skills/<name>/` | Skill source (SKILL.md + optional references/, scripts/, assets/) | You |
 | `.agents/skills/<name>` | Symlink to `.ai/skills/<name>/` — discovered by Codex, Gemini, Cursor, Goose, etc. | Kit (symlink) |
 | `.claude/skills/<name>` | Symlink to `.ai/skills/<name>/` — discovered by Claude Code | Kit (symlink) |

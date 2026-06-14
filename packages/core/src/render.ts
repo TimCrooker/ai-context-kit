@@ -4,6 +4,8 @@ import { ensureDotRelative, normalizePosix, rel, toPosix } from "./path-utils.js
 import { ContextError } from "./errors.js";
 import type { ContextModule, Manifest, ScopeDefinition, ScopeManifest } from "./types.js";
 import { resolveScopeIncludes } from "./config.js";
+import { loadMcpRegistry, renderMcpCatalog } from "./mcp.js";
+import { discoverSkills } from "./skills.js";
 
 export interface GeneratedOutput {
   path: string;
@@ -78,10 +80,15 @@ Run \`ai-context build\` after editing anything under \`.ai/\`. Generated files 
 ---
 `;
 
-export function buildRootAgents(manifest: Manifest, modules: ContextModule[]): string {
-  const body = manifest.skills
+export function buildRootAgents(
+  manifest: Manifest,
+  modules: ContextModule[],
+  mcpCatalog = ""
+): string {
+  const base = manifest.skills
     ? `${KIT_AWARENESS_STANZA}${modulesBody("root", modules)}`
     : modulesBody("root", modules);
+  const body = mcpCatalog ? `${base}\n\n${mcpCatalog.trim()}` : base;
   return withGeneratedHeader(".ai/context/modules/*.md", body);
 }
 
@@ -111,7 +118,11 @@ function buildScopedAgents(cwd: string, scope: ScopeDefinition): string {
   return withGeneratedHeader(".ai/context/scopes.json", body);
 }
 
-export function buildClaudeRoot(manifest: Manifest, modules: ContextModule[]): string {
+export function buildClaudeRoot(
+  manifest: Manifest,
+  modules: ContextModule[],
+  mcpCatalog = ""
+): string {
   const lines = [
     "# Claude Instructions",
     "",
@@ -138,7 +149,21 @@ export function buildClaudeRoot(manifest: Manifest, modules: ContextModule[]): s
     "- Keep local secrets in `.ai/secrets.local.env` (gitignored)."
   );
 
+  if (mcpCatalog) {
+    lines.push("", mcpCatalog.trim());
+  }
+
   return withGeneratedHeader(".ai/context/scopes.json", lines.join("\n"));
+}
+
+function buildMcpCatalog(cwd: string, manifest: Manifest): string {
+  if (!manifest.mcp) return "";
+  const reg = loadMcpRegistry(cwd, manifest);
+  if (!reg) return "";
+  const skillNames = new Set(
+    manifest.skills ? discoverSkills(cwd, manifest.skills.source).map((s) => s.name) : []
+  );
+  return renderMcpCatalog(reg.servers, (n) => skillNames.has(n));
 }
 
 function buildScopedClaude(cwd: string, scope: ScopeDefinition): string {
@@ -212,10 +237,11 @@ export function collectGeneratedOutputs(
       "Manifest targets must define root output path"
     );
   }
-  add(rootOutput, buildRootAgents(manifest, modules), "target:root");
+  const mcpCatalog = buildMcpCatalog(cwd, manifest);
+  add(rootOutput, buildRootAgents(manifest, modules, mcpCatalog), "target:root");
 
   const claudeOutput = manifest.claudeOutput ?? DEFAULT_CLAUDE_OUTPUT;
-  add(claudeOutput, buildClaudeRoot(manifest, modules), "claude:root");
+  add(claudeOutput, buildClaudeRoot(manifest, modules, mcpCatalog), "claude:root");
 
   for (const scope of scopeManifest.scopes) {
     if (scope.codexAgents && scope.codexAgents.length > 0) {

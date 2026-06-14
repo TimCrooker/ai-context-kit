@@ -20,6 +20,7 @@ import {
   findOrphanedSkillMirrors,
   planSkillMirrors,
 } from "./skills.js";
+import { loadMcpRegistry, planMcpOutputs } from "./mcp.js";
 import type {
   BuildOptions,
   BuildResult,
@@ -161,6 +162,19 @@ function buildInternal(cwd: string, options: BuildOptions): BuildResult {
     }
   }
 
+  if (manifest.mcp) {
+    const reg = loadMcpRegistry(cwd, manifest);
+    if (reg) {
+      const mcpOutputs = planMcpOutputs(cwd, reg, manifest.mcp.clients);
+      // Never pass removeOrphans here: writeOutputs' orphan scan would treat the
+      // context .md files as orphans against the MCP-only output set and delete them.
+      const mcpResult = writeOutputs(cwd, mcpOutputs, { ...options, removeOrphans: false });
+      result.written.push(...mcpResult.written);
+      result.unchanged.push(...mcpResult.unchanged);
+      if (!mcpResult.upToDate) result.upToDate = false;
+    }
+  }
+
   return result;
 }
 
@@ -192,6 +206,20 @@ export function diffGenerated(cwd: string, options: BuildOptions = {}): DiffRepo
   for (const generated of generatedFiles) {
     if (!expected.has(generated)) {
       items.push({ path: generated, type: "delete" });
+    }
+  }
+
+  if (manifest.mcp) {
+    const reg = loadMcpRegistry(cwd, manifest);
+    if (reg) {
+      for (const out of planMcpOutputs(cwd, reg, manifest.mcp.clients)) {
+        const abs = path.join(cwd, out.path);
+        if (!exists(abs)) {
+          items.push({ path: out.path, type: "create" });
+        } else if (readUtf8(abs) !== out.content) {
+          items.push({ path: out.path, type: "update" });
+        }
+      }
     }
   }
 
@@ -264,6 +292,29 @@ export function verifyAll(cwd: string, options: VerifyOptions = {}): VerifyResul
       }
     } catch (skillError) {
       errors.push(formatContextError(skillError));
+    }
+
+    // MCP: scan managed config files for credential literals that slipped past
+    // the registry validator (e.g. a hand-edit). ${VAR} references are stripped first.
+    try {
+      const manifest = loadManifest(cwd, options.manifestPath);
+      if (manifest.mcp) {
+        const reg = loadMcpRegistry(cwd, manifest);
+        if (reg) {
+          for (const out of planMcpOutputs(cwd, reg, manifest.mcp.clients)) {
+            const abs = path.join(cwd, out.path);
+            if (!exists(abs)) continue;
+            const stripped = readUtf8(abs).replace(/\$\{[A-Z0-9_]+\}/g, "");
+            if (/(sk-|xox[baprs]-|ghp_|AKIA|-----BEGIN|[A-Za-z0-9_-]{40,})/.test(stripped)) {
+              errors.push(
+                `[AICTX_MCP_SECRET_LEAK] Possible secret literal in managed file ${out.path}; use a \${VAR} reference`
+              );
+            }
+          }
+        }
+      }
+    } catch (mcpError) {
+      errors.push(formatContextError(mcpError));
     }
 
     const diff = diffGenerated(cwd, { manifestPath: options.manifestPath });

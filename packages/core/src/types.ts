@@ -13,6 +13,42 @@ export interface Manifest {
   targets: Record<string, string>;
   claudeOutput?: string;
   skills?: SkillsManifestBlock;
+  mcp?: McpManifestBlock;
+}
+
+// MCP primitive: declare servers once in .ai/mcp.json, fan out to each agent client.
+export type McpClientId = "claude" | "codex"; // v1; cursor/vscode/gemini added later
+
+export type McpTransport =
+  | { type: "http" | "sse"; url: string }
+  | { type: "stdio"; command: string; args?: string[] };
+
+export interface McpServer {
+  name: string;
+  transport: McpTransport;
+  scope: "project" | "user";
+  targets: McpClientId[];
+  auth?: "oauth" | "env" | "none";
+  /** Values must be ${VAR} references, never literal secrets. */
+  env?: Record<string, string>;
+  /** Backing skill name; defaults to a co-named .ai/skills/<name> when present. */
+  skill?: string;
+  /** When true, emit a catalog line into the root AGENTS.md/CLAUDE.md. */
+  context?: boolean;
+  /** Optional shell command run by `ai-context mcp setup <name>`. */
+  setup?: string;
+}
+
+export interface McpRegistry {
+  version: 1;
+  servers: McpServer[];
+}
+
+export interface McpManifestBlock {
+  /** Path to the registry file, e.g. ".ai/mcp.json". */
+  registry: string;
+  /** Which client adapters are active in this repo. */
+  clients: McpClientId[];
 }
 
 export interface ScopeDefinition {
