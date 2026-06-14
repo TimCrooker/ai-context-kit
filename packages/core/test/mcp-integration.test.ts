@@ -103,4 +103,40 @@ describe("verify covers MCP staleness", () => {
     expect(res.ok).toBe(false);
     expect(res.errors.join("\n")).toMatch(/out of date/);
   });
+
+  it("fails when a generated config contains a resolved secret literal", () => {
+    writeRegistry([
+      { name: "posthog", transport: { type: "http", url: "u" }, scope: "project", targets: ["claude"] },
+    ]);
+    buildAll(tmp);
+    // Simulate a leak: hand-edit the managed file to embed a credential literal.
+    fs.writeFileSync(
+      path.join(tmp, ".mcp.json"),
+      JSON.stringify(
+        {
+          _generated: "ai-context: do not edit; generated from .ai/mcp.json",
+          mcpServers: { posthog: { type: "http", url: "u", env: { TOKEN: "ghp_abcdefghijklmnopqrstuvwxyz0123456789" } } },
+        },
+        null,
+        2
+      ) + "\n"
+    );
+    const res = verifyAll(tmp, {});
+    expect(res.ok).toBe(false);
+    expect(res.errors.join("\n")).toMatch(/secret/i);
+  });
+});
+
+describe("diff covers MCP outputs", () => {
+  it("reports .mcp.json as create then update", async () => {
+    const { diffGenerated } = await import("../src/engine.js");
+    writeRegistry([
+      { name: "posthog", transport: { type: "http", url: "u" }, scope: "project", targets: ["claude"] },
+    ]);
+    const before = diffGenerated(tmp);
+    expect(before.items.some((i) => i.path === ".mcp.json" && i.type === "create")).toBe(true);
+    buildAll(tmp);
+    const after = diffGenerated(tmp);
+    expect(after.items.some((i) => i.path === ".mcp.json")).toBe(false);
+  });
 });

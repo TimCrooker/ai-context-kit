@@ -209,6 +209,20 @@ export function diffGenerated(cwd: string, options: BuildOptions = {}): DiffRepo
     }
   }
 
+  if (manifest.mcp) {
+    const reg = loadMcpRegistry(cwd, manifest);
+    if (reg) {
+      for (const out of planMcpOutputs(cwd, reg, manifest.mcp.clients)) {
+        const abs = path.join(cwd, out.path);
+        if (!exists(abs)) {
+          items.push({ path: out.path, type: "create" });
+        } else if (readUtf8(abs) !== out.content) {
+          items.push({ path: out.path, type: "update" });
+        }
+      }
+    }
+  }
+
   if (manifest.skills) {
     const skills = discoverSkills(cwd, manifest.skills.source);
     const plans = planSkillMirrors(cwd, manifest, skills);
@@ -278,6 +292,29 @@ export function verifyAll(cwd: string, options: VerifyOptions = {}): VerifyResul
       }
     } catch (skillError) {
       errors.push(formatContextError(skillError));
+    }
+
+    // MCP: scan managed config files for credential literals that slipped past
+    // the registry validator (e.g. a hand-edit). ${VAR} references are stripped first.
+    try {
+      const manifest = loadManifest(cwd, options.manifestPath);
+      if (manifest.mcp) {
+        const reg = loadMcpRegistry(cwd, manifest);
+        if (reg) {
+          for (const out of planMcpOutputs(cwd, reg, manifest.mcp.clients)) {
+            const abs = path.join(cwd, out.path);
+            if (!exists(abs)) continue;
+            const stripped = readUtf8(abs).replace(/\$\{[A-Z0-9_]+\}/g, "");
+            if (/(sk-|xox[baprs]-|ghp_|AKIA|-----BEGIN|[A-Za-z0-9_-]{40,})/.test(stripped)) {
+              errors.push(
+                `[AICTX_MCP_SECRET_LEAK] Possible secret literal in managed file ${out.path}; use a \${VAR} reference`
+              );
+            }
+          }
+        }
+      }
+    } catch (mcpError) {
+      errors.push(formatContextError(mcpError));
     }
 
     const diff = diffGenerated(cwd, { manifestPath: options.manifestPath });
