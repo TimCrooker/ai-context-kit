@@ -10,6 +10,11 @@ export type {
   DiffReport,
   InitOptions,
   Manifest,
+  McpClientId,
+  McpManifestBlock,
+  McpRegistry,
+  McpServer,
+  McpTransport,
   ScopeDefinition,
   ScopeManifest,
   Template,
@@ -51,3 +56,13 @@ export {
 } from "./migrate.js";
 
 export type { ApplyPlanOptions, ApplyPlanReport } from "./migrate.js";
+
+export {
+  parseMcpRegistry,
+  loadMcpRegistry,
+  planMcpOutputs,
+  resolveSkillLink,
+  renderMcpCatalog,
+} from "./mcp.js";
+export { getAdapter, allClients, MANAGED_JSON_KEY, MANAGED_MARKER } from "./mcp-adapters/index.js";
+export type { McpAdapter } from "./mcp-adapters/index.js";

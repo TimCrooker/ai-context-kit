@@ -20,6 +20,7 @@ import {
   findOrphanedSkillMirrors,
   planSkillMirrors,
 } from "./skills.js";
+import { loadMcpRegistry, planMcpOutputs } from "./mcp.js";
 import type {
   BuildOptions,
   BuildResult,
@@ -158,6 +159,19 @@ function buildInternal(cwd: string, options: BuildOptions): BuildResult {
           result.removed.push(path.relative(cwd, orphan));
         }
       }
+    }
+  }
+
+  if (manifest.mcp) {
+    const reg = loadMcpRegistry(cwd, manifest);
+    if (reg) {
+      const mcpOutputs = planMcpOutputs(cwd, reg, manifest.mcp.clients);
+      // Never pass removeOrphans here: writeOutputs' orphan scan would treat the
+      // context .md files as orphans against the MCP-only output set and delete them.
+      const mcpResult = writeOutputs(cwd, mcpOutputs, { ...options, removeOrphans: false });
+      result.written.push(...mcpResult.written);
+      result.unchanged.push(...mcpResult.unchanged);
+      if (!mcpResult.upToDate) result.upToDate = false;
     }
   }
 
