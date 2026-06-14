@@ -127,6 +127,67 @@ describe("verify covers MCP staleness", () => {
   });
 });
 
+describe("dogfood: list-forge's real servers", () => {
+  it("posthog + grafana + rn-debugger produce stable per-client configs", () => {
+    writeRegistry([
+      {
+        name: "posthog",
+        transport: { type: "http", url: "https://mcp.posthog.com/mcp" },
+        scope: "project",
+        targets: ["claude", "codex"],
+        env: { POSTHOG_PERSONAL_API_KEY: "${POSTHOG_PERSONAL_API_KEY}" },
+        skill: "analytics-ops",
+        context: true,
+      },
+      {
+        name: "grafana",
+        transport: { type: "stdio", command: "uvx", args: ["mcp-grafana"] },
+        scope: "project",
+        targets: ["claude", "codex"],
+        env: { GRAFANA_URL: "${GRAFANA_URL}", GRAFANA_SERVICE_ACCOUNT_TOKEN: "${GRAFANA_SERVICE_ACCOUNT_TOKEN}" },
+      },
+      {
+        name: "rn-debugger",
+        transport: { type: "stdio", command: "node_modules/.bin/react-native-ai-devtools" },
+        scope: "project",
+        targets: ["claude"],
+      },
+    ]);
+    // analytics-ops skill must exist for the context-link to resolve.
+    fs.mkdirSync(path.join(tmp, ".ai/skills/analytics-ops"), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, ".ai/skills/analytics-ops/SKILL.md"),
+      "---\nname: analytics-ops\ndescription: PostHog + Grafana ops\n---\n\n# Analytics Ops\n"
+    );
+    fs.writeFileSync(
+      path.join(tmp, ".ai/context/manifest.json"),
+      JSON.stringify({
+        version: 1,
+        modulesDir: ".ai/context/modules",
+        scopesFile: ".ai/context/scopes.json",
+        targets: { root: "AGENTS.md" },
+        skills: { source: ".ai/skills", mirrors: [".agents/skills", ".claude/skills"] },
+        mcp: { registry: ".ai/mcp.json", clients: ["claude", "codex"] },
+      })
+    );
+    buildAll(tmp);
+
+    const claude = JSON.parse(fs.readFileSync(path.join(tmp, ".mcp.json"), "utf8"));
+    expect(Object.keys(claude.mcpServers).sort()).toEqual(["grafana", "posthog", "rn-debugger"]);
+    expect(claude.mcpServers.posthog.env.POSTHOG_PERSONAL_API_KEY).toBe("${POSTHOG_PERSONAL_API_KEY}");
+    expect(claude.mcpServers["rn-debugger"]).toEqual({ command: "node_modules/.bin/react-native-ai-devtools" });
+
+    const codex = fs.readFileSync(path.join(tmp, ".codex/config.toml"), "utf8");
+    expect(codex).toContain("[mcp_servers.grafana]");
+    expect(codex).toContain("[mcp_servers.posthog]");
+    expect(codex).not.toContain("rn-debugger"); // not a codex target
+
+    const agents = fs.readFileSync(path.join(tmp, "AGENTS.md"), "utf8");
+    expect(agents).toContain("**posthog**");
+    expect(agents).toContain("`analytics-ops` skill");
+  });
+});
+
 describe("diff covers MCP outputs", () => {
   it("reports .mcp.json as create then update", async () => {
     const { diffGenerated } = await import("../src/engine.js");
