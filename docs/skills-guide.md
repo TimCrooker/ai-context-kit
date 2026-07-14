@@ -46,6 +46,26 @@ scope: [api]
 
 The skill emits to `apps/api/.agents/skills/api-conventions` and `apps/api/.claude/skills/api-conventions` instead of repo root. Use `scope: ["*"]` to emit at root AND every scope.
 
+## Agent targeting: claude-only (or codex-only) skills
+
+By default a skill mirrors to every location in `manifest.skills.mirrors`. To restrict a skill to specific agents, add `agents:` (whitelist) or `excludeAgents:` (blacklist) to its frontmatter — the two are mutually exclusive:
+
+```yaml
+---
+name: dispatching-subagents
+description: How to delegate work to subagent executors
+agents: [claude] # only .claude/skills/ — hidden from codex & friends
+---
+```
+
+```yaml
+excludeAgents: [claude] # everywhere EXCEPT .claude/skills/
+```
+
+Agent IDs derive from each mirror path's first segment with the leading dot stripped: `.claude/skills` → `claude`, `.agents/skills` → `agents`, a future `.cursor/skills` → `cursor`. Referencing an ID that no manifest mirror produces fails the build with `AICTX_SKILL_AGENT_UNKNOWN`.
+
+The filter composes with `scope:` — it restricts which mirror directories are used at every emission root. When you add a filter to an existing skill, run `ai-context build --remove-orphans` to delete the now-excluded mirror symlinks; plain `build` leaves them and `doctor` reports them as orphans.
+
 ## Windows users
 
 Symlinks need Developer Mode enabled (Settings → Update & Security → For developers) and `git config core.symlinks true`. Without them, the kit falls back to copying skill content with a `_generated:` banner. `ai-context doctor` reports the fallback.

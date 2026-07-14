@@ -32,12 +32,15 @@ export function runSkillsList(opts: ListOptions): void {
       const skillPlans = plans.filter((p) => p.source === s.dir);
       const mirrorStatus = skillPlans.map((p) => {
         const rel = path.relative(cwd, p.mirror);
-        if (!fs.existsSync(p.mirror)) return { path: rel, state: "missing" as const };
+        if (!fs.existsSync(p.mirror))
+          return { path: rel, state: "missing" as const };
         try {
           const stat = fs.lstatSync(p.mirror);
           return {
             path: rel,
-            state: stat.isSymbolicLink() ? ("symlink" as const) : ("copy" as const),
+            state: stat.isSymbolicLink()
+              ? ("symlink" as const)
+              : ("copy" as const),
           };
         } catch {
           // Could not read the entry; surface as conflict so docs match impl.
@@ -48,6 +51,8 @@ export function runSkillsList(opts: ListOptions): void {
         name: s.name,
         description: s.frontmatter.description,
         scope: s.frontmatter.scope ?? [],
+        agents: s.frontmatter.agents ?? null,
+        excludeAgents: s.frontmatter.excludeAgents ?? null,
         source: path.relative(cwd, s.dir),
         mirrors: mirrorStatus,
       };
@@ -59,8 +64,14 @@ export function runSkillsList(opts: ListOptions): void {
     }
 
     for (const skill of skillRows) {
-      const scopeTag = skill.scope.length === 0 ? "[root]" : `[${skill.scope.join(",")}]`;
-      console.log(`${skill.name} ${scopeTag}`);
+      const scopeTag =
+        skill.scope.length === 0 ? "[root]" : `[${skill.scope.join(",")}]`;
+      const agentTag = skill.agents
+        ? ` [agents: ${skill.agents.join(",")}]`
+        : skill.excludeAgents
+          ? ` [agents: not ${skill.excludeAgents.join(",")}]`
+          : "";
+      console.log(`${skill.name} ${scopeTag}${agentTag}`);
       console.log(`  ${skill.description}`);
       console.log(`  source: ${skill.source}`);
       for (const m of skill.mirrors) {

@@ -72,7 +72,7 @@
 - Purpose: list discovered skills with their mirror status.
 - Exit codes: `0` on success, `1` on error.
 - Default output: human-readable text — one skill per block with `name`, `description`, `scope` tag, `source` path, and mirror states.
-- `--json` flag: emits valid JSON with shape `{skills: [{name, description, scope, source, mirrors: [{path, state}]}]}`. `state` is one of `symlink | copy | missing`.
+- `--json` flag: emits valid JSON with shape `{skills: [{name, description, scope, agents, excludeAgents, source, mirrors: [{path, state}]}]}`. `state` is one of `symlink | copy | missing`. `agents`/`excludeAgents` are `null` when the skill has no agent filter.
 - When the manifest has no `skills` block: prints `No skills configured (manifest.skills absent).` (or `{skills: []}` with `--json`).
 
 ### `ai-context skills create <name>`
@@ -82,6 +82,7 @@
 - Flags:
   - `--description <text>`: sets the skill description (defaults to a placeholder if omitted).
   - `--scope <id>`: repeatable; emits mirrors to that scope's mirror locations instead of root. Use `*` for all scopes.
+  - `--agents <id>`: repeatable; whitelists agent mirror IDs (e.g. `claude`) so the skill emits only to those agents' mirror directories.
   - `--with-references`: scaffolds `references/example.md` alongside `SKILL.md`.
   - `--with-scripts`: scaffolds `scripts/example.sh` with exec bit set.
 - Exit 1 on: invalid name, missing manifest, manifest without `skills` block, or skill source already exists.

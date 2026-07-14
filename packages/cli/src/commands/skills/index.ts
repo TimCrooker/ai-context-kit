@@ -9,7 +9,9 @@ export function registerSkillsCommand(program: Command): void {
     .command("list")
     .description("List discovered skills with mirror status")
     .option("--json", "Emit JSON output", false)
-    .action((opts: { json: boolean }) => runSkillsList({ json: Boolean(opts.json) }));
+    .action((opts: { json: boolean }) =>
+      runSkillsList({ json: Boolean(opts.json) }),
+    );
 
   skills
     .command("create <name>")
@@ -19,16 +21,33 @@ export function registerSkillsCommand(program: Command): void {
       "--scope <id>",
       "Limit emission to this scope (repeatable); omit for root-only",
       (value: string, prev: string[]) => [...prev, value],
-      [] as string[]
+      [] as string[],
+    )
+    .option(
+      "--agents <id>",
+      "Emit only to this agent's mirror, e.g. claude (repeatable); omit for all agents",
+      (value: string, prev: string[]) => [...prev, value],
+      [] as string[],
     )
     .option("--with-references", "Scaffold a references/ directory", false)
     .option("--with-scripts", "Scaffold a scripts/ directory", false)
-    .action((name: string, opts: { description: string; scope: string[]; withReferences: boolean; withScripts: boolean }) =>
-      runSkillsCreate(name, {
-        description: opts.description,
-        scope: opts.scope,
-        withReferences: Boolean(opts.withReferences),
-        withScripts: Boolean(opts.withScripts),
-      })
+    .action(
+      (
+        name: string,
+        opts: {
+          description: string;
+          scope: string[];
+          agents: string[];
+          withReferences: boolean;
+          withScripts: boolean;
+        },
+      ) =>
+        runSkillsCreate(name, {
+          description: opts.description,
+          scope: opts.scope,
+          agents: opts.agents,
+          withReferences: Boolean(opts.withReferences),
+          withScripts: Boolean(opts.withScripts),
+        }),
     );
 }

@@ -9,6 +9,7 @@ export type ContextErrorCode =
   | "AICTX_SKILL_NAME_INVALID"
   | "AICTX_SKILL_MISSING_FILE"
   | "AICTX_SKILL_SCOPE_UNKNOWN"
+  | "AICTX_SKILL_AGENT_UNKNOWN"
   | "AICTX_SKILL_MIRROR_CONFLICT"
   | "AICTX_SKILL_MIRROR_BROKEN"
   | "AICTX_MIGRATE_PLAN_EXISTS"
@@ -38,11 +39,15 @@ export class ContextError extends Error {
   readonly details?: Record<string, unknown>;
 
   constructor(message: string);
-  constructor(code: ContextErrorCode, message: string, details?: Record<string, unknown>);
+  constructor(
+    code: ContextErrorCode,
+    message: string,
+    details?: Record<string, unknown>,
+  );
   constructor(
     codeOrMessage: string,
     message?: string,
-    details?: Record<string, unknown>
+    details?: Record<string, unknown>,
   ) {
     if (message === undefined) {
       super(codeOrMessage);

@@ -152,6 +152,10 @@ export interface SkillFrontmatter {
   name: string;
   description: string;
   scope?: string[];
+  /** Whitelist of agent mirror IDs this skill emits to (e.g. ["claude"]). Mutually exclusive with excludeAgents. */
+  agents?: string[];
+  /** Blacklist of agent mirror IDs this skill is withheld from. Mutually exclusive with agents. */
+  excludeAgents?: string[];
   license?: string;
   compatibility?: string;
   metadata?: Record<string, unknown>;
