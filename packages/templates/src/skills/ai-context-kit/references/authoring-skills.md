@@ -48,7 +48,7 @@ Every `SKILL.md` must open with YAML frontmatter:
 
 ```yaml
 ---
-name: my-skill                     # kebab-case, must match directory name
+name: my-skill # kebab-case, must match directory name
 description: >
   Use when doing X or Y. Triggers  # 1–1024 chars; this is what the agent reads
   on phrases like "do X", "Y task".
@@ -60,6 +60,7 @@ Both `name` and `description` are required. The kit enforces this at build time.
 ### Writing an effective description
 
 The description is the agent's trigger. It should answer: **when should I load this?** Include:
+
 - The domain or task type
 - Trigger phrases or file patterns
 - What you'll gain from loading it
@@ -69,13 +70,15 @@ Good: `"Use when writing or debugging Express route handlers, controllers, or se
 
 ## Optional frontmatter fields
 
-| Field | Type | Description |
-|---|---|---|
-| `scope` | string[] | Scope IDs this skill emits to. Omit for root-only. `['*']` = root + every scope. |
-| `license` | string | SPDX license identifier |
-| `compatibility` | string | Agent/CLI version compatibility hint |
-| `metadata` | object | Arbitrary key-value for tooling |
-| `allowed-tools` | string or string[] | Tool names the skill is permitted to use |
+| Field           | Type               | Description                                                                                                                                   |
+| --------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scope`         | string[]           | Scope IDs this skill emits to. Omit for root-only. `['*']` = root + every scope.                                                              |
+| `agents`        | string[]           | Whitelist of agent mirror IDs (e.g. `[claude]`) — the skill emits only to those agents' mirror dirs. Mutually exclusive with `excludeAgents`. |
+| `excludeAgents` | string[]           | Blacklist of agent mirror IDs the skill is withheld from. Mutually exclusive with `agents`.                                                   |
+| `license`       | string             | SPDX license identifier                                                                                                                       |
+| `compatibility` | string             | Agent/CLI version compatibility hint                                                                                                          |
+| `metadata`      | object             | Arbitrary key-value for tooling                                                                                                               |
+| `allowed-tools` | string or string[] | Tool names the skill is permitted to use                                                                                                      |
 
 ## Creating a skill
 
@@ -120,6 +123,17 @@ scope: ['*']       # root + every scope defined in manifest.json
 
 The `scope` values must match keys in `manifest.json` targets (excluding `root`).
 
+## Agent targeting
+
+By default a skill mirrors to every `manifest.skills.mirrors` location (`.agents/skills/` AND `.claude/skills/`). Restrict it with frontmatter:
+
+```yaml
+agents: [claude] # claude-only: emits to .claude/skills/ but NOT .agents/skills/
+excludeAgents: [claude] # inverse: everywhere except Claude
+```
+
+Agent IDs derive from each mirror path's first segment minus the leading dot (`.claude/skills` → `claude`, `.agents/skills` → `agents`). Unknown IDs fail the build with `AICTX_SKILL_AGENT_UNKNOWN`. After adding a filter to an existing skill, run `ai-context build --remove-orphans` to delete the now-excluded mirrors.
+
 ## Complete SKILL.md example
 
 ```markdown
@@ -141,12 +155,13 @@ allowed-tools:
 Route handlers must be thin. All business logic lives in services.
 
 ## File structure
-
 ```
+
 src/
-  routes/<name>.routes.ts       # Route definitions + middleware chain
-  controllers/<name>.controller.ts  # Request/response handling only
-  services/<name>.service.ts    # Business logic
+routes/<name>.routes.ts # Route definitions + middleware chain
+controllers/<name>.controller.ts # Request/response handling only
+services/<name>.service.ts # Business logic
+
 ```
 
 ## Conventions

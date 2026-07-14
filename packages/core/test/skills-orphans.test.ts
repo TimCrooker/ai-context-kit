@@ -12,7 +12,11 @@ describe("findOrphanedSkillMirrors", () => {
     modulesDir: ".ai/context/modules",
     scopesFile: ".ai/context/scopes.json",
     targets: { root: "AGENTS.md", api: "apps/api/AGENTS.md" },
-    skills: { source: ".ai/skills", mirrors: [".agents/skills", ".claude/skills"], metaSkill: true },
+    skills: {
+      source: ".ai/skills",
+      mirrors: [".agents/skills", ".claude/skills"],
+      metaSkill: true,
+    },
   };
 
   beforeEach(() => {
@@ -32,7 +36,7 @@ describe("findOrphanedSkillMirrors", () => {
     fs.mkdirSync(path.join(tmp, ".ai/skills/alpha"), { recursive: true });
     fs.writeFileSync(
       path.join(tmp, ".ai/skills/alpha/SKILL.md"),
-      "---\nname: alpha\ndescription: x\n---\nbody\n"
+      "---\nname: alpha\ndescription: x\n---\nbody\n",
     );
     makeMirror(".agents/skills/alpha", ".ai/skills/alpha");
 
@@ -49,16 +53,41 @@ describe("findOrphanedSkillMirrors", () => {
   it("finds orphan mirrors under per-scope locations", () => {
     makeMirror("apps/api/.claude/skills/old-skill", ".ai/skills/old-skill");
     const orphans = findOrphanedSkillMirrors(tmp, manifest, []);
-    expect(orphans).toContain(path.join(tmp, "apps/api/.claude/skills/old-skill"));
+    expect(orphans).toContain(
+      path.join(tmp, "apps/api/.claude/skills/old-skill"),
+    );
   });
 
   it("ignores files that are not symlinks (treats them as user content)", () => {
-    fs.mkdirSync(path.join(tmp, ".agents/skills/user-skill"), { recursive: true });
+    fs.mkdirSync(path.join(tmp, ".agents/skills/user-skill"), {
+      recursive: true,
+    });
     fs.writeFileSync(
       path.join(tmp, ".agents/skills/user-skill/SKILL.md"),
-      "---\nname: user-skill\ndescription: hand-authored\n---\nbody\n"
+      "---\nname: user-skill\ndescription: hand-authored\n---\nbody\n",
     );
     const orphans = findOrphanedSkillMirrors(tmp, manifest, []);
     expect(orphans).not.toContain(path.join(tmp, ".agents/skills/user-skill"));
+  });
+
+  it("plan-aware: flags a name-active mirror whose path is no longer planned", () => {
+    // Skill exists and stays active, but only its .claude mirror is planned
+    // (as after adding agents: [claude] to its frontmatter).
+    fs.mkdirSync(path.join(tmp, ".ai/skills/alpha"), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, ".ai/skills/alpha/SKILL.md"),
+      "---\nname: alpha\ndescription: x\nagents: [claude]\n---\nbody\n",
+    );
+    const agentsMirror = makeMirror(".agents/skills/alpha", ".ai/skills/alpha");
+    const claudeMirror = makeMirror(".claude/skills/alpha", ".ai/skills/alpha");
+
+    const orphans = findOrphanedSkillMirrors(
+      tmp,
+      manifest,
+      ["alpha"],
+      [claudeMirror],
+    );
+    expect(orphans).toContain(agentsMirror);
+    expect(orphans).not.toContain(claudeMirror);
   });
 });

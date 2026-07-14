@@ -5,12 +5,20 @@ import {
   loadModules,
   loadScopeManifest,
   resolveManifestPath,
-  validateScopeWiring
+  validateScopeWiring,
 } from "./config.js";
 import { computeDocChainBudget } from "./budget.js";
 import { collectGeneratedOutputs } from "./render.js";
 import { lintContent } from "./content-lint.js";
-import { exists, isSymlink, readSymlink, readUtf8, removeFile, walkFiles, writeUtf8 } from "./io.js";
+import {
+  exists,
+  isSymlink,
+  readSymlink,
+  readUtf8,
+  removeFile,
+  walkFiles,
+  writeUtf8,
+} from "./io.js";
 import { rel, toPosix } from "./path-utils.js";
 import { ContextError, formatContextError } from "./errors.js";
 import {
@@ -29,7 +37,7 @@ import type {
   InitOptions,
   Template,
   VerifyOptions,
-  VerifyResult
+  VerifyResult,
 } from "./types.js";
 
 const GENERATED_MARKER = "Source: .ai/context/scopes.json";
@@ -42,7 +50,7 @@ const SKIP_DIRS = new Set([
   ".next",
   ".expo",
   ".idea",
-  ".vscode"
+  ".vscode",
 ]);
 
 function gatherGeneratedFiles(cwd: string): string[] {
@@ -55,14 +63,14 @@ function gatherGeneratedFiles(cwd: string): string[] {
 function writeOutputs(
   cwd: string,
   outputs: ReturnType<typeof collectGeneratedOutputs>,
-  options: BuildOptions
+  options: BuildOptions,
 ): BuildResult {
   const result: BuildResult = {
     written: [],
     unchanged: [],
     removed: [],
     warnings: [],
-    upToDate: true
+    upToDate: true,
   };
 
   for (const output of outputs) {
@@ -105,7 +113,12 @@ function buildInternal(cwd: string, options: BuildOptions): BuildResult {
   const scopeManifest = loadScopeManifest(cwd, manifest);
   const modules = loadModules(cwd, manifest);
   const wiring = validateScopeWiring(cwd, manifest, scopeManifest);
-  const outputs = collectGeneratedOutputs(cwd, manifest, scopeManifest, modules);
+  const outputs = collectGeneratedOutputs(
+    cwd,
+    manifest,
+    scopeManifest,
+    modules,
+  );
   const result = writeOutputs(cwd, outputs, options);
   result.warnings.push(...wiring.warnings);
 
@@ -122,14 +135,19 @@ function buildInternal(cwd: string, options: BuildOptions): BuildResult {
       for (const plan of apply.fallbackToCopy) {
         result.written.push(path.relative(cwd, plan.mirror));
         result.warnings.push(
-          `Skill mirror at ${path.relative(cwd, plan.mirror)} used copy-fallback (no symlink support)`
+          `Skill mirror at ${path.relative(cwd, plan.mirror)} used copy-fallback (no symlink support)`,
         );
       }
       for (const fail of apply.failed) {
         result.warnings.push(`Skill mirror failed: ${fail.reason}`);
       }
       if (options.removeOrphans) {
-        const orphans = findOrphanedSkillMirrors(cwd, manifest, activeNames);
+        const orphans = findOrphanedSkillMirrors(
+          cwd,
+          manifest,
+          activeNames,
+          plans.map((p) => p.mirror),
+        );
         for (const orphan of orphans) {
           fs.unlinkSync(orphan);
           result.removed.push(path.relative(cwd, orphan));
@@ -155,7 +173,12 @@ function buildInternal(cwd: string, options: BuildOptions): BuildResult {
         }
       }
       if (options.removeOrphans) {
-        for (const orphan of findOrphanedSkillMirrors(cwd, manifest, activeNames)) {
+        for (const orphan of findOrphanedSkillMirrors(
+          cwd,
+          manifest,
+          activeNames,
+          plans.map((p) => p.mirror),
+        )) {
           result.removed.push(path.relative(cwd, orphan));
         }
       }
@@ -168,7 +191,10 @@ function buildInternal(cwd: string, options: BuildOptions): BuildResult {
       const mcpOutputs = planMcpOutputs(cwd, reg, manifest.mcp.clients);
       // Never pass removeOrphans here: writeOutputs' orphan scan would treat the
       // context .md files as orphans against the MCP-only output set and delete them.
-      const mcpResult = writeOutputs(cwd, mcpOutputs, { ...options, removeOrphans: false });
+      const mcpResult = writeOutputs(cwd, mcpOutputs, {
+        ...options,
+        removeOrphans: false,
+      });
       result.written.push(...mcpResult.written);
       result.unchanged.push(...mcpResult.unchanged);
       if (!mcpResult.upToDate) result.upToDate = false;
@@ -182,12 +208,20 @@ export function buildAll(cwd: string, options: BuildOptions = {}): BuildResult {
   return buildInternal(cwd, options);
 }
 
-export function diffGenerated(cwd: string, options: BuildOptions = {}): DiffReport {
+export function diffGenerated(
+  cwd: string,
+  options: BuildOptions = {},
+): DiffReport {
   const manifest = loadManifest(cwd, options.manifestPath);
   const scopeManifest = loadScopeManifest(cwd, manifest);
   const modules = loadModules(cwd, manifest);
   validateScopeWiring(cwd, manifest, scopeManifest);
-  const outputs = collectGeneratedOutputs(cwd, manifest, scopeManifest, modules);
+  const outputs = collectGeneratedOutputs(
+    cwd,
+    manifest,
+    scopeManifest,
+    modules,
+  );
 
   const items: DiffItem[] = [];
   for (const output of outputs) {
@@ -239,7 +273,12 @@ export function diffGenerated(cwd: string, options: BuildOptions = {}): DiffRepo
       }
     }
     const activeNames = skills.map((s) => s.name);
-    for (const orphan of findOrphanedSkillMirrors(cwd, manifest, activeNames)) {
+    for (const orphan of findOrphanedSkillMirrors(
+      cwd,
+      manifest,
+      activeNames,
+      plans.map((p) => p.mirror),
+    )) {
       items.push({ path: path.relative(cwd, orphan), type: "delete" });
     }
   }
@@ -248,7 +287,10 @@ export function diffGenerated(cwd: string, options: BuildOptions = {}): DiffRepo
   return { items };
 }
 
-export function verifyAll(cwd: string, options: VerifyOptions = {}): VerifyResult {
+export function verifyAll(
+  cwd: string,
+  options: VerifyOptions = {},
+): VerifyResult {
   const errors: string[] = [];
   const warnings: string[] = [];
   let budgetReport: ReturnType<typeof computeDocChainBudget> = null;
@@ -258,7 +300,7 @@ export function verifyAll(cwd: string, options: VerifyOptions = {}): VerifyResul
       manifestPath: options.manifestPath,
       check: true,
       dryRun: true,
-      removeOrphans: false
+      removeOrphans: false,
     });
 
     warnings.push(...buildResult.warnings);
@@ -284,7 +326,7 @@ export function verifyAll(cwd: string, options: VerifyOptions = {}): VerifyResul
             const expected = computeSymlinkTarget(plan.mirror, plan.source);
             if (target !== expected) {
               errors.push(
-                `Skill mirror points at wrong target: ${relMirror} → ${target} (expected ${expected})`
+                `Skill mirror points at wrong target: ${relMirror} → ${target} (expected ${expected})`,
               );
             }
           }
@@ -305,9 +347,13 @@ export function verifyAll(cwd: string, options: VerifyOptions = {}): VerifyResul
             const abs = path.join(cwd, out.path);
             if (!exists(abs)) continue;
             const stripped = readUtf8(abs).replace(/\$\{[A-Z0-9_]+\}/g, "");
-            if (/(sk-|xox[baprs]-|ghp_|AKIA|-----BEGIN|[A-Za-z0-9_-]{40,})/.test(stripped)) {
+            if (
+              /(sk-|xox[baprs]-|ghp_|AKIA|-----BEGIN|[A-Za-z0-9_-]{40,})/.test(
+                stripped,
+              )
+            ) {
               errors.push(
-                `[AICTX_MCP_SECRET_LEAK] Possible secret literal in managed file ${out.path}; use a \${VAR} reference`
+                `[AICTX_MCP_SECRET_LEAK] Possible secret literal in managed file ${out.path}; use a \${VAR} reference`,
               );
             }
           }
@@ -323,13 +369,14 @@ export function verifyAll(cwd: string, options: VerifyOptions = {}): VerifyResul
       errors.push(
         `Unmanaged generated files detected: ${orphanDeletes
           .map((item) => item.path)
-          .join(", ")}`
+          .join(", ")}`,
       );
     }
 
     budgetReport = computeDocChainBudget(cwd);
     if (!budgetReport) {
-      const msg = "No .codex/config.toml project_doc_max_bytes detected; skipping budget checks";
+      const msg =
+        "No .codex/config.toml project_doc_max_bytes detected; skipping budget checks";
       if (options.strictCodexConfig) {
         errors.push(msg);
       } else {
@@ -340,8 +387,10 @@ export function verifyAll(cwd: string, options: VerifyOptions = {}): VerifyResul
         if (entry.violations.length > 0) {
           errors.push(
             `${entry.docName} budget exceeded (${entry.maxBytes}): ${entry.violations
-              .map((violation) => `${violation.directory}=${violation.totalBytes}`)
-              .join(", ")}`
+              .map(
+                (violation) => `${violation.directory}=${violation.totalBytes}`,
+              )
+              .join(", ")}`,
           );
         }
       }
@@ -354,11 +403,14 @@ export function verifyAll(cwd: string, options: VerifyOptions = {}): VerifyResul
     ok: errors.length === 0,
     errors,
     warnings,
-    budgetReport: budgetReport ?? undefined
+    budgetReport: budgetReport ?? undefined,
   };
 }
 
-export function lintConfig(cwd: string, manifestPath?: string): { ok: boolean; errors: string[] } {
+export function lintConfig(
+  cwd: string,
+  manifestPath?: string,
+): { ok: boolean; errors: string[] } {
   const errors: string[] = [];
   try {
     const manifest = loadManifest(cwd, manifestPath);
@@ -375,13 +427,18 @@ export function lintConfig(cwd: string, manifestPath?: string): { ok: boolean; e
   return { ok: errors.length === 0, errors };
 }
 
-export function doctor(cwd: string, manifestPath?: string): { issues: string[]; suggestions: string[] } {
+export function doctor(
+  cwd: string,
+  manifestPath?: string,
+): { issues: string[]; suggestions: string[] } {
   const issues: string[] = [];
   const suggestions: string[] = [];
 
   const manifestResolved = resolveManifestPath(cwd, manifestPath);
   if (!exists(manifestResolved)) {
-    issues.push(`Missing manifest at ${toPosix(path.relative(cwd, manifestResolved))}`);
+    issues.push(
+      `Missing manifest at ${toPosix(path.relative(cwd, manifestResolved))}`,
+    );
     suggestions.push("Run: ai-context init");
     return { issues, suggestions };
   }
@@ -409,7 +466,8 @@ export function doctor(cwd: string, manifestPath?: string): { issues: string[]; 
     const manifest = loadManifest(cwd, manifestPath);
     if (manifest.skills) {
       const skills = discoverSkills(cwd, manifest.skills.source);
-      const activeNames = new Set(skills.map((s) => s.name));
+      const plans = planSkillMirrors(cwd, manifest, skills);
+      const plannedMirrors = new Set(plans.map((p) => p.mirror));
 
       // Build list of mirror base directories to scan
       const mirrorBases: string[] = [];
@@ -434,24 +492,26 @@ export function doctor(cwd: string, manifestPath?: string): { issues: string[]; 
             const resolved = path.resolve(path.dirname(full), target);
             if (!fs.existsSync(resolved)) {
               issues.push(
-                `Skill mirror broken (target missing): ${path.relative(cwd, full)}`
+                `Skill mirror broken (target missing): ${path.relative(cwd, full)}`,
               );
               suggestions.push(`Run: ai-context build --remove-orphans`);
             }
           }
-          if (!activeNames.has(entry.name)) {
+          if (!plannedMirrors.has(full)) {
             issues.push(
-              `Orphan skill mirror: ${path.relative(cwd, full)} (no source at ${manifest.skills.source}/${entry.name}/)`
+              `Orphan skill mirror: ${path.relative(cwd, full)} (source deleted, or excluded by scope/agents filter)`,
             );
+            suggestions.push(`Run: ai-context build --remove-orphans`);
           }
         }
       }
 
       // Per-plan checks for active skills
-      const plans = planSkillMirrors(cwd, manifest, skills);
       for (const plan of plans) {
         if (!fs.existsSync(plan.mirror)) {
-          issues.push(`Skill mirror missing: ${path.relative(cwd, plan.mirror)}`);
+          issues.push(
+            `Skill mirror missing: ${path.relative(cwd, plan.mirror)}`,
+          );
           suggestions.push(`Run: ai-context build`);
           continue;
         }
@@ -460,7 +520,7 @@ export function doctor(cwd: string, manifestPath?: string): { issues: string[]; 
           const expected = computeSymlinkTarget(plan.mirror, plan.source);
           if (target !== expected) {
             issues.push(
-              `Skill mirror points to wrong target: ${path.relative(cwd, plan.mirror)} (got ${target}, expected ${expected})`
+              `Skill mirror points to wrong target: ${path.relative(cwd, plan.mirror)} (got ${target}, expected ${expected})`,
             );
             suggestions.push(`Run: ai-context build`);
           }
@@ -472,13 +532,19 @@ export function doctor(cwd: string, manifestPath?: string): { issues: string[]; 
   }
 
   if (issues.length === 0 && suggestions.length === 0) {
-    suggestions.push("System looks healthy. Run ai-context diff before major scope changes.");
+    suggestions.push(
+      "System looks healthy. Run ai-context diff before major scope changes.",
+    );
   }
 
   return { issues, suggestions };
 }
 
-export function initProject(cwd: string, template: Template, options: InitOptions = {}): string[] {
+export function initProject(
+  cwd: string,
+  template: Template,
+  options: InitOptions = {},
+): string[] {
   const written: string[] = [];
 
   for (const file of template.files) {
@@ -489,18 +555,24 @@ export function initProject(cwd: string, template: Template, options: InitOption
     if (fileExists && !options.force) {
       if (options.upgrade) {
         if (isMetaSkillFile && options.refreshMetaSkill) {
-          writeUtf8(abs, file.content.endsWith("\n") ? file.content : `${file.content}\n`);
+          writeUtf8(
+            abs,
+            file.content.endsWith("\n") ? file.content : `${file.content}\n`,
+          );
           written.push(file.path);
         }
         continue; // skip existing files in upgrade mode
       }
       throw new ContextError(
         "AICTX_INIT_FAILED",
-        `Refusing to overwrite existing file without --force: ${toPosix(path.relative(cwd, abs))}`
+        `Refusing to overwrite existing file without --force: ${toPosix(path.relative(cwd, abs))}`,
       );
     }
 
-    writeUtf8(abs, file.content.endsWith("\n") ? file.content : `${file.content}\n`);
+    writeUtf8(
+      abs,
+      file.content.endsWith("\n") ? file.content : `${file.content}\n`,
+    );
     written.push(file.path);
   }
 

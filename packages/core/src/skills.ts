@@ -2,10 +2,24 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { ContextError } from "./errors.js";
-import { readUtf8, createSymlink, isSymlink, readSymlink, removeSymlink, copyDirRecursive, restoreExecBits, writeUtf8 } from "./io.js";
+import {
+  readUtf8,
+  createSymlink,
+  isSymlink,
+  readSymlink,
+  removeSymlink,
+  copyDirRecursive,
+  restoreExecBits,
+  writeUtf8,
+} from "./io.js";
 import { parseFrontMatter } from "./front-matter.js";
 import { toPosix } from "./path-utils.js";
-import type { SkillFrontmatter, SkillSource, Manifest, SkillMirrorPlan } from "./types.js";
+import type {
+  SkillFrontmatter,
+  SkillSource,
+  Manifest,
+  SkillMirrorPlan,
+} from "./types.js";
 
 // Lowercase alphanumerics + single hyphens; no leading/trailing hyphen, no consecutive hyphens.
 const SKILL_NAME_PATTERN = /^[a-z0-9](?:-?[a-z0-9]+)*$/;
@@ -15,7 +29,7 @@ const MAX_DESCRIPTION_LENGTH = 1024;
 export function parseSkillFrontmatter(
   raw: string,
   expectedName: string,
-  sourcePath: string
+  sourcePath: string,
 ): SkillFrontmatter {
   const { meta } = parseFrontMatter(raw, sourcePath);
 
@@ -23,25 +37,25 @@ export function parseSkillFrontmatter(
   if (typeof name !== "string" || name.length === 0) {
     throw new ContextError(
       "AICTX_SKILL_FRONTMATTER_INVALID",
-      `Skill name is required in ${sourcePath}`
+      `Skill name is required in ${sourcePath}`,
     );
   }
   if (name.length > MAX_NAME_LENGTH) {
     throw new ContextError(
       "AICTX_SKILL_NAME_INVALID",
-      `Skill name '${name}' exceeds ${MAX_NAME_LENGTH} chars (${sourcePath})`
+      `Skill name '${name}' exceeds ${MAX_NAME_LENGTH} chars (${sourcePath})`,
     );
   }
   if (!SKILL_NAME_PATTERN.test(name)) {
     throw new ContextError(
       "AICTX_SKILL_NAME_INVALID",
-      `Skill '${name}' has invalid name pattern in ${sourcePath} (must be [a-z0-9-], no leading/trailing/consecutive hyphens)`
+      `Skill '${name}' has invalid name pattern in ${sourcePath} (must be [a-z0-9-], no leading/trailing/consecutive hyphens)`,
     );
   }
   if (name !== expectedName) {
     throw new ContextError(
       "AICTX_SKILL_NAME_INVALID",
-      `Skill name '${name}' does not match directory '${expectedName}' in ${sourcePath}`
+      `Skill name '${name}' does not match directory '${expectedName}' in ${sourcePath}`,
     );
   }
 
@@ -49,13 +63,13 @@ export function parseSkillFrontmatter(
   if (typeof description !== "string" || description.length === 0) {
     throw new ContextError(
       "AICTX_SKILL_FRONTMATTER_INVALID",
-      `Skill description is required in ${sourcePath}`
+      `Skill description is required in ${sourcePath}`,
     );
   }
   if (description.length > MAX_DESCRIPTION_LENGTH) {
     throw new ContextError(
       "AICTX_SKILL_FRONTMATTER_INVALID",
-      `Skill description exceeds ${MAX_DESCRIPTION_LENGTH} chars in ${sourcePath}`
+      `Skill description exceeds ${MAX_DESCRIPTION_LENGTH} chars in ${sourcePath}`,
     );
   }
 
@@ -64,18 +78,37 @@ export function parseSkillFrontmatter(
     if (!Array.isArray(meta.scope)) {
       throw new ContextError(
         "AICTX_SKILL_FRONTMATTER_INVALID",
-        `Skill scope must be an array in ${sourcePath}`
+        `Skill scope must be an array in ${sourcePath}`,
       );
     }
     for (const entry of meta.scope) {
       if (typeof entry !== "string") {
         throw new ContextError(
           "AICTX_SKILL_FRONTMATTER_INVALID",
-          `Skill scope entries must be strings in ${sourcePath}`
+          `Skill scope entries must be strings in ${sourcePath}`,
         );
       }
     }
     scope = meta.scope as string[];
+  }
+
+  const agents = parseAgentList(meta.agents, "agents", sourcePath);
+  const excludeAgents = parseAgentList(
+    meta.excludeAgents,
+    "excludeAgents",
+    sourcePath,
+  );
+  if (agents !== undefined && excludeAgents !== undefined) {
+    throw new ContextError(
+      "AICTX_SKILL_FRONTMATTER_INVALID",
+      `Skill declares both agents and excludeAgents in ${sourcePath}; use one or the other`,
+    );
+  }
+  if (agents !== undefined && agents.length === 0) {
+    throw new ContextError(
+      "AICTX_SKILL_FRONTMATTER_INVALID",
+      `Skill agents whitelist is empty in ${sourcePath}; it would emit nowhere. Remove the field to emit to all agents.`,
+    );
   }
 
   return {
@@ -83,11 +116,48 @@ export function parseSkillFrontmatter(
     name,
     description,
     scope,
+    agents,
+    excludeAgents,
   } as SkillFrontmatter;
 }
 
+function parseAgentList(
+  value: unknown,
+  field: "agents" | "excludeAgents",
+  sourcePath: string,
+): string[] | undefined {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value)) {
+    throw new ContextError(
+      "AICTX_SKILL_FRONTMATTER_INVALID",
+      `Skill ${field} must be an array in ${sourcePath}`,
+    );
+  }
+  for (const entry of value) {
+    if (typeof entry !== "string" || entry.length === 0) {
+      throw new ContextError(
+        "AICTX_SKILL_FRONTMATTER_INVALID",
+        `Skill ${field} entries must be non-empty strings in ${sourcePath}`,
+      );
+    }
+  }
+  return value as string[];
+}
+
+/**
+ * Agent ID for a mirror path: first path segment minus its leading dot.
+ * ".claude/skills" → "claude", ".agents/skills" → "agents", ".cursor/skills" → "cursor".
+ */
+export function mirrorAgentId(mirrorPath: string): string {
+  const first =
+    toPosix(mirrorPath).replace(/^\.\//, "").split("/")[0] ?? mirrorPath;
+  return first.replace(/^\./, "");
+}
+
 export function discoverSkills(cwd: string, sourceDir: string): SkillSource[] {
-  const absSourceDir = path.isAbsolute(sourceDir) ? sourceDir : path.join(cwd, sourceDir);
+  const absSourceDir = path.isAbsolute(sourceDir)
+    ? sourceDir
+    : path.join(cwd, sourceDir);
   if (!fs.existsSync(absSourceDir)) {
     return [];
   }
@@ -104,7 +174,7 @@ export function discoverSkills(cwd: string, sourceDir: string): SkillSource[] {
     if (!fs.existsSync(skillMdPath)) {
       throw new ContextError(
         "AICTX_SKILL_MISSING_FILE",
-        `SKILL.md not found in ${dir}`
+        `SKILL.md not found in ${dir}`,
       );
     }
 
@@ -118,12 +188,18 @@ export function discoverSkills(cwd: string, sourceDir: string): SkillSource[] {
   return results;
 }
 
-export function computeSymlinkTarget(mirrorPath: string, sourcePath: string): string {
+export function computeSymlinkTarget(
+  mirrorPath: string,
+  sourcePath: string,
+): string {
   const relative = path.relative(path.dirname(mirrorPath), sourcePath);
   return toPosix(relative);
 }
 
-export function createMirrorSymlink(sourceDir: string, mirrorPath: string): void {
+export function createMirrorSymlink(
+  sourceDir: string,
+  mirrorPath: string,
+): void {
   const expectedTarget = computeSymlinkTarget(mirrorPath, sourceDir);
 
   if (fs.existsSync(mirrorPath) || isSymlink(mirrorPath)) {
@@ -136,7 +212,7 @@ export function createMirrorSymlink(sourceDir: string, mirrorPath: string): void
     } else {
       throw new ContextError(
         "AICTX_SKILL_MIRROR_CONFLICT",
-        `Cannot create skill mirror at ${mirrorPath}: a real file or directory exists there. Either delete it or move skill source elsewhere.`
+        `Cannot create skill mirror at ${mirrorPath}: a real file or directory exists there. Either delete it or move skill source elsewhere.`,
       );
     }
   }
@@ -146,7 +222,11 @@ export function createMirrorSymlink(sourceDir: string, mirrorPath: string): void
 
 const COPY_BANNER_PREFIX = "<!-- _generated: do not edit here.";
 
-export function createMirrorCopy(sourceDir: string, mirrorPath: string, repoRoot?: string): void {
+export function createMirrorCopy(
+  sourceDir: string,
+  mirrorPath: string,
+  repoRoot?: string,
+): void {
   if (fs.existsSync(mirrorPath)) {
     fs.rmSync(mirrorPath, { recursive: true, force: true });
   }
@@ -165,7 +245,7 @@ export function createMirrorCopy(sourceDir: string, mirrorPath: string, repoRoot
 export function planSkillMirrors(
   repoRoot: string,
   manifest: Manifest,
-  skills: SkillSource[]
+  skills: SkillSource[],
 ): SkillMirrorPlan[] {
   if (!manifest.skills) return [];
 
@@ -173,12 +253,33 @@ export function planSkillMirrors(
   const scopeTargets = Object.fromEntries(
     Object.entries(manifest.targets)
       .filter(([id]) => id !== "root")
-      .map(([id, agentsPath]) => [id, path.posix.dirname(agentsPath.split(path.sep).join("/"))])
+      .map(([id, agentsPath]) => [
+        id,
+        path.posix.dirname(agentsPath.split(path.sep).join("/")),
+      ]),
   );
+
+  const agentIds = manifest.skills.mirrors.map((m) => mirrorAgentId(m));
 
   const plans: SkillMirrorPlan[] = [];
 
   for (const skill of skills) {
+    const { agents, excludeAgents } = skill.frontmatter;
+    for (const id of [...(agents ?? []), ...(excludeAgents ?? [])]) {
+      if (!agentIds.includes(id)) {
+        throw new ContextError(
+          "AICTX_SKILL_AGENT_UNKNOWN",
+          `Skill '${skill.name}' references unknown agent '${id}'; known agents from manifest mirrors: ${agentIds.join(", ")}`,
+        );
+      }
+    }
+    const mirrors = manifest.skills.mirrors.filter((m) => {
+      const id = mirrorAgentId(m);
+      if (agents !== undefined) return agents.includes(id);
+      if (excludeAgents !== undefined) return !excludeAgents.includes(id);
+      return true;
+    });
+
     const scope = skill.frontmatter.scope ?? [];
     const explicitWildcard = scope.includes("*");
     const scopeIds = explicitWildcard
@@ -190,13 +291,13 @@ export function planSkillMirrors(
       if (scopeId === "root") {
         throw new ContextError(
           "AICTX_SKILL_SCOPE_UNKNOWN",
-          `Skill '${skill.name}' uses 'root' in scope; the implicit root emission is already enabled by omitting scope. Either remove 'root' or use scope: ["*"] for root + all scopes.`
+          `Skill '${skill.name}' uses 'root' in scope; the implicit root emission is already enabled by omitting scope. Either remove 'root' or use scope: ["*"] for root + all scopes.`,
         );
       }
       if (!targetIds.includes(scopeId)) {
         throw new ContextError(
           "AICTX_SKILL_SCOPE_UNKNOWN",
-          `Skill '${skill.name}' references undefined scope '${scopeId}'`
+          `Skill '${skill.name}' references undefined scope '${scopeId}'`,
         );
       }
     }
@@ -218,7 +319,7 @@ export function planSkillMirrors(
     }
 
     for (const root of emissionRoots) {
-      for (const mirror of manifest.skills.mirrors) {
+      for (const mirror of mirrors) {
         plans.push({
           source: skill.dir,
           mirror: path.join(root, mirror, skill.name),
@@ -244,14 +345,15 @@ export interface ApplyMirrorResult {
 
 export function applySkillMirrors(
   plans: SkillMirrorPlan[],
-  options: ApplyMirrorOptions = {}
+  options: ApplyMirrorOptions = {},
 ): ApplyMirrorResult {
   const written: SkillMirrorPlan[] = [];
   const fallbackToCopy: SkillMirrorPlan[] = [];
   const failed: { plan: SkillMirrorPlan; reason: string }[] = [];
 
   const forceFallback =
-    options.forceCopy === true || process.env.AI_CONTEXT_FORCE_COPY_FALLBACK === "1";
+    options.forceCopy === true ||
+    process.env.AI_CONTEXT_FORCE_COPY_FALLBACK === "1";
 
   for (const plan of plans) {
     try {
@@ -265,7 +367,10 @@ export function applySkillMirrors(
         createMirrorSymlink(plan.source, plan.mirror);
         written.push(plan);
       } catch (error) {
-        if (error instanceof ContextError && error.code === "AICTX_SKILL_MIRROR_CONFLICT") {
+        if (
+          error instanceof ContextError &&
+          error.code === "AICTX_SKILL_MIRROR_CONFLICT"
+        ) {
           throw error;
         }
         createMirrorCopy(plan.source, plan.mirror, options.repoRoot);
@@ -273,7 +378,9 @@ export function applySkillMirrors(
       }
     } catch (error) {
       const reason =
-        error instanceof ContextError ? `[${error.code}] ${error.message}` : String(error);
+        error instanceof ContextError
+          ? `[${error.code}] ${error.message}`
+          : String(error);
       failed.push({ plan, reason });
     }
   }
@@ -284,11 +391,14 @@ export function applySkillMirrors(
 export function findOrphanedSkillMirrors(
   repoRoot: string,
   manifest: Manifest,
-  activeSkillNames: string[]
+  activeSkillNames: string[],
+  plannedMirrors?: string[],
 ): string[] {
   if (!manifest.skills) return [];
 
   const active = new Set(activeSkillNames);
+  const planned =
+    plannedMirrors === undefined ? undefined : new Set(plannedMirrors);
   const orphans: string[] = [];
 
   const mirrorBases: string[] = [];
@@ -308,7 +418,11 @@ export function findOrphanedSkillMirrors(
     for (const entry of fs.readdirSync(base, { withFileTypes: true })) {
       const full = path.join(base, entry.name);
       if (!isSymlink(full)) continue;
-      if (!active.has(entry.name)) {
+      // Plan-aware: a mirror whose exact path is not planned is orphaned even when
+      // its skill still exists (e.g. it was excluded via an agents/excludeAgents filter).
+      const orphaned =
+        planned !== undefined ? !planned.has(full) : !active.has(entry.name);
+      if (orphaned) {
         orphans.push(full);
       }
     }
