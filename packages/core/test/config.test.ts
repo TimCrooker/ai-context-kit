@@ -42,6 +42,44 @@ describe("config validation", () => {
     expect(() => loadModules(cwd, manifest)).toThrow(ContextError);
   });
 
+  it("rejects a module targeting a scoped target instead of silently dropping it", () => {
+    const cwd = copyFixture();
+    const modulePath = path.join(cwd, ".ai/context/modules/010-context-system.md");
+    fs.writeFileSync(
+      modulePath,
+      ["---", "id: context-system", "targets:", "  - api", "order: 10", "---", "module body"].join(
+        "\n"
+      ),
+      "utf8"
+    );
+
+    const manifest = loadManifest(cwd);
+    // 'api' IS a valid manifest target, so the unknown-target check passes. Only
+    // the root output composes modules, so accepting this would drop the body.
+    expect(() => loadModules(cwd, manifest)).toThrow(/only compose into the root output/);
+  });
+
+  it("still reports an unknown target distinctly from a scoped one", () => {
+    const cwd = copyFixture();
+    const modulePath = path.join(cwd, ".ai/context/modules/010-context-system.md");
+    fs.writeFileSync(
+      modulePath,
+      [
+        "---",
+        "id: context-system",
+        "targets:",
+        "  - typo",
+        "order: 10",
+        "---",
+        "module body"
+      ].join("\n"),
+      "utf8"
+    );
+
+    const manifest = loadManifest(cwd);
+    expect(() => loadModules(cwd, manifest)).toThrow(/unknown target 'typo'/);
+  });
+
   it("rejects duplicate scope ids", () => {
     const cwd = copyFixture();
     const scopePath = path.join(cwd, ".ai/context/scopes.json");

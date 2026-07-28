@@ -46,7 +46,7 @@ Map of target ID → output path (relative to repo root). **Must include a `root
 }
 ```
 
-The `root` target is the global AGENTS.md that every agent sees. Scoped targets are written when modules list that target ID in their `targets` frontmatter field.
+The `root` target is the global AGENTS.md that every agent sees, and it is the only target modules compose into. Scoped targets are written from their scope's includes in `scopes.json` — every non-root target must be produced by some scope, or the build fails.
 
 ### `claudeOutput` (optional, string)
 
