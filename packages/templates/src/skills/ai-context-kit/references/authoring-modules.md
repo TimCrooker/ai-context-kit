@@ -36,21 +36,14 @@ Must match the filename with the leading `NNN-` prefix and `.md` extension strip
 
 ### `targets`
 
-Array of target IDs that appear as keys in `.ai/context/manifest.json`. The most common values:
+**`root` is the only legal value.** Modules compose into the repo-root `AGENTS.md` / `CLAUDE.md` and nowhere else.
 
-| Value | Meaning |
-|---|---|
-| `root` | Emitted into the repo-root `AGENTS.md` / `CLAUDE.md` |
-| `api` | Emitted into `apps/api/AGENTS.md` (if that target is defined) |
-| `web` | Emitted into `apps/web/AGENTS.md` (if that target is defined) |
-
-A module can list multiple targets:
 ```yaml
 targets:
   - root
-  - api
-  - web
 ```
+
+Scoped outputs (`apps/<pkg>/AGENTS.md`, `apps/<pkg>/CLAUDE.md`, `.claude/rules/*.md`) are built entirely from a scope's includes — modules never feed them. Naming a scoped target here is a build error, not a no-op: see "Content for one package" below.
 
 ### `order`
 
@@ -61,10 +54,19 @@ Integer used as a secondary sort key when multiple modules have the same numeric
 At build time, the kit:
 1. Reads all `*.md` files in `modulesDir`
 2. Parses frontmatter from each
-3. Groups modules by target
-4. Sorts each group by `order` (ascending)
-5. Concatenates bodies into the generated output, separated by blank lines
-6. Writes the result to each target's output path
+3. Sorts by `order` (ascending), then `id`
+4. Concatenates bodies, separated by blank lines
+5. Writes the result to the `root` target's output path and to `claudeOutput`
+
+## Content for one package
+
+Modules are global. Guidance that only applies inside one package does not go in a module — it goes in a rule file wired to that package's scope:
+
+1. Write the content to `.ai/rules/<name>.md` (no frontmatter — rule files are plain markdown).
+2. Add that path to the scope's `codexIncludes` and `claudeIncludes` in `.ai/context/scopes.json`.
+3. Run `ai-context build`.
+
+The content then lands in that scope's `AGENTS.md` and `CLAUDE.md` (and its `.claude/rules/*.md` file, if the scope defines one). See `authoring-scopes.md`.
 
 ## Complete working example
 
@@ -93,7 +95,8 @@ This is a TypeScript monorepo for the Acme loan origination platform.
 
 | Mistake | Fix |
 |---|---|
-| `targets: [api]` but `api` isn't in `manifest.json` | Add the target to manifest, or use `root` |
+| `targets: [api]` — expecting the body to reach `apps/api/AGENTS.md` | Modules only compose into the root output. Move the content to `.ai/rules/` and add it to the `api` scope's includes |
+| `targets: [api]` but `api` isn't in `manifest.json` | Use `root` |
 | `id: project-overview` in `050-architecture.md` | `id` must match the filename stem: `architecture` |
 | Frontmatter missing entirely | Every module must have `---` delimited frontmatter |
 | Module over 80 lines | Split into two modules or move domain detail to a rule file under `.ai/rules/` |

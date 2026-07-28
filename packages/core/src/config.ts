@@ -270,6 +270,16 @@ export function loadModules(cwd: string, manifest: Manifest): ContextModule[] {
           `Module '${file}' references unknown target '${target}'`
         );
       }
+      // Modules compose into the root output only. Scoped outputs are built
+      // entirely from scope includes, so a non-root target would be accepted
+      // here and then silently dropped at render time.
+      if (target !== "root") {
+        throw new ContextError(
+          "AICTX_CONFIG_INVALID",
+          `Module '${file}' targets '${target}', but modules only compose into the root output. ` +
+            `Move this content to a rule file and add it to the '${target}' scope's includes in the scope manifest.`
+        );
+      }
     }
 
     const orderValue = meta.order;
