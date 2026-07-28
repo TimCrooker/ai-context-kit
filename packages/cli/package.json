@@ -1,6 +1,6 @@
 {
   "name": "@timothycrooker/ai-context-cli",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "CLI for Codex + Claude context generation",
   "license": "MIT",
   "type": "module",
