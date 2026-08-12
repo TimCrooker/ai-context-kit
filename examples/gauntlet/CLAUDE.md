@@ -26,5 +26,5 @@ Fixture monorepo for the ai-context-kit cross-CLI gauntlet. Exercises every skil
 ## Claude-Specific Notes
 
 - Use scoped `CLAUDE.md` files for domain-specific, just-in-time context.
-- Reserve `.claude/rules/*.md` for narrow path-glob injections only.
+- Put procedures and standards in `.ai/skills/*`, and point at them from a scoped `CLAUDE.md` so they load where the work happens.
 - Keep local secrets in `.ai/secrets.local.env` (gitignored).
