@@ -277,7 +277,7 @@ export function loadModules(cwd: string, manifest: Manifest): ContextModule[] {
         throw new ContextError(
           "AICTX_CONFIG_INVALID",
           `Module '${file}' targets '${target}', but modules only compose into the root output. ` +
-            `Move this content to a rule file and add it to the '${target}' scope's includes in the scope manifest.`
+            `Move this content into its own file and add it to the '${target}' scope's includes in the scope manifest.`
         );
       }
     }
